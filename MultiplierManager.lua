@@ -1,6 +1,9 @@
+local VERSION = 1.3
 MultiplierManager = MultiplierManager or {}
 
-if MultiplierManager and MultiplierManager.Loaded then return end
+if MultiplierManager and MultiplierManager.Version and VERSION <= MultiplierManager.Version then return end
+
+MultiplierManager.Version = VERSION
 
 MultiplierManager.PlayerMult = {
 	--[PlayerType.PLAYER_ISAAC] = 1,
@@ -573,7 +576,3 @@ function MultiplierManager:ApplyMultipliers(AddStat, player, MultType)
 	print("Error MultiplierManager:ApplyMultipliers : Argument #3 is an unknown value")
 	return 0
 end
-
-
--- this for when it load in other mods doesn't load again
-MultiplierManager.Loaded = true
