@@ -549,7 +549,7 @@ function MultiplierManager:ApplyMultipliers(AddStat, player, MultType)
 		print("Error MultiplierManager:ApplyMultipliers : Argument #3 isn't a string")
 		return
 	end
-	local MultType, IsBaseStats = string.gsub(string.lower(MultType), "base", "")
+	local MultType, IsBaseStats = string.gsub(string.gsub(string.lower(MultType), "[%_, %-, % ]", ""), "base", "")
 
 	if IsBaseStats > 0 then
 		IsBaseStats = true
