@@ -518,7 +518,7 @@ function MultiplierManager:AddMultiplierCondition(StatType : string, ConditionNa
 
 - `Result` : function or float - Returns the multiplier to apply
 
-###Example
+### Example
 
 ```lua
 function MultiplierManager:AddMultiplierCondition(
@@ -545,7 +545,7 @@ function MultiplierManager:AddMultiplierCondition(
 )
 ```
 
-##GetMultiplierCondition
+## GetMultiplierCondition
 
 ```lua
 function MultiplierManager:GetMultiplierCondition(StatType : string, ConditionName : string)
