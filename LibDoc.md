@@ -504,7 +504,7 @@ Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 
 ---
 
-##AddMultiplierCondition
+## AddMultiplierCondition
 
 ```lua
 function MultiplierManager:AddMultiplierCondition(StatType : string, ConditionName : string, Condition : function(_, player : userdata, IsBaseStat : bool) or bool,  Result : function(_, player : userdata, IsBaseStat : bool) or float)
