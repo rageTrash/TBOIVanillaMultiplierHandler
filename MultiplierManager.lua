@@ -6,8 +6,6 @@ if MultiplierManager and MultiplierManager.Version and VERSION <= MultiplierMana
 MultiplierManager.Version = VERSION
 
 MultiplierManager.PlayerMult = {
-	--[PlayerType.PLAYER_ISAAC] = 1,
-	--[PlayerType.PLAYER_MAGDALENE] = 1,
 	[PlayerType.PLAYER_CAIN] 			= {Damage = 1.2},
 	[PlayerType.PLAYER_JUDAS] 			= {Damage = 1.35},
 	[PlayerType.PLAYER_BLUEBABY] 		= {Damage = 1.05},
@@ -15,42 +13,20 @@ MultiplierManager.PlayerMult = {
 									      if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_WHORE_OF_BABYLON) then return 1 end
 									      return 0.75
 									    end},
-	--[PlayerType.PLAYER_SAMSON],
 	[PlayerType.PLAYER_AZAZEL] 			= {Damage = 1.5, Tears = 0.267},
-	--[PlayerType.PLAYER_LAZARUS],
-	--[PlayerType.PLAYER_EDEN],
-	--[PlayerType.PLAYER_THELOST],
 	[PlayerType.PLAYER_LAZARUS2] 		= {Damage = 1.4},
 	[PlayerType.PLAYER_BLACKJUDAS] 		= {Damage = 2},
-	--[PlayerType.PLAYER_LILITH],
 	[PlayerType.PLAYER_KEEPER]			= {Damage = 1.2},
-	--[PlayerType.PLAYER_APOLLYON],
 	[PlayerType.PLAYER_THEFORGOTTEN] 	= {Damage = 1.5, Tears = 0.5},
-	--[PlayerType.PLAYER_THESOUL],
-	--[PlayerType.PLAYER_BETHANY],
-	--[PlayerType.PLAYER_JACOB],
-	--[PlayerType.PLAYER_ESAU],
 
-	--[PlayerType.PLAYER_ISAAC_B],
+	--Tainted Characters
 	[PlayerType.PLAYER_MAGDALENE_B] 	= {Damage = 0.75},
 	[PlayerType.PLAYER_CAIN_B]			= {Damage = 1.2},
-	--[PlayerType.PLAYER_JUDAS_B],
-	--[PlayerType.PLAYER_BLUEBABY_B],
 	[PlayerType.PLAYER_EVE_B]			= {Damage = 1.2, Tears = 0.66},
-	--[PlayerType.PLAYER_SAMSON_B],
 	[PlayerType.PLAYER_AZAZEL_B] 		= {Damage = 1.5, Tears = 0.33},
-	--[PlayerType.PLAYER_LAZARUS_B],
-	--[PlayerType.PLAYER_EDEN_B],
 	[PlayerType.PLAYER_THELOST_B] 		= {Damage = 1.3},
-	--[PlayerType.PLAYER_LILITH_B],
-	--[PlayerType.PLAYER_KEEPER_B],
-	--[PlayerType.PLAYER_APOLLYON_B],
 	[PlayerType.PLAYER_THEFORGOTTEN_B]	= {Damage = 1.5, Tears = 0.5},
-	--[PlayerType.PLAYER_BETHANY_B],
-	--[PlayerType.PLAYER_JACOB_B],
 	[PlayerType.PLAYER_LAZARUS2_B] 		= {Damage = 1.5},
-	--[PlayerType.PLAYER_JACOB2_B],
-	--[PlayerType.PLAYER_THESOUL_B],
 }
 
 
@@ -199,11 +175,6 @@ MultiplierManager.ItemMult = {
 }
 
 
-local function CrackedCrownMult(_, player, baseStats)
-	if baseStats then return 1 end
-	return MultiplierManager:GetCrackedCrownMultiplier(player)
-end
-
 MultiplierManager.TrinketMult = {
 	[TrinketType.TRINKET_CRACKED_CROWN] = {
 		Damage = MultiplierManager.GetCrackedCrownMultiplier,
@@ -215,14 +186,104 @@ MultiplierManager.TrinketMult = {
 }
 
 
+MultiplierManager.MultCondition = {
+	["DAMAGE"] = {
+		["D8 Mult"] = {
+			Condition = function() return (REPENTOGON and REPENTOGON["Real"]) end,
+			Result = function(_, player)
+				return player:GetD8DamageModifier()
+			end
+		},
+		["Holy Aura"] = {
+			Condition = function(_, player)
+				for _, ent in pairs(Isaac.FindByType(1000, EffectVariant.HALLOWED_GROUND, -1, false, false)) do
+					if ent.Position:DistanceSquared(player.Position) <= 6800 then
+						return true
+					end
+				end
+				return false
+			end,
+			Result = function(_, player)
+				for _, ent in pairs(Isaac.FindByType(3, FamiliarVariant.STAR_OF_BETHLEHEM, -1, false, false)) do
+					if ent.Position:DistanceSquared(player.Position) <= 6800 then
+						return 1.8
+					end
+				end
+				return 1.2
+			end
+		}
+	},
+	["TEARS"] = {
+		["D8 Mult"] = {
+			Condition = function() return (REPENTOGON and REPENTOGON["Real"]) end,
+			Result = function(_, player)
+				return player:GetD8FireDelayModifier()
+			end
+		},
+		["Holy Aura"] = {
+			Condition = function(_, player)
+				for _, ent in pairs(Isaac.FindByType(1000, EffectVariant.HALLOWED_GROUND, -1, false, false)) do
+					if ent.Position:DistanceSquared(player.Position) <= 6800 then
+						return true
+					end
+				end
+				return false
+			end,
+			Result = 2.5
+		}
+	},
+	["SPEED"] = {
+		["D8 Mult"] = {
+			Condition = function() return (REPENTOGON and REPENTOGON["Real"]) end,
+			Result = function(_, player)
+				return player:GetD8SpeedModifier()
+			end
+		},
+	},
+	["RANGE"] = {
+		["D8 Mult"] = {
+			Condition = function() return (REPENTOGON and REPENTOGON["Real"]) end,
+			Result = function(_, player)
+				return player:GetD8RangeModifier()
+			end
+		},
+	},
+	["SHOTSPEED"] = {},
+	["LUCK"] = {}
+}
+
+
+local function CheckString(str)
+	local str, base = string.gsub(string.gsub(string.upper(str), "[%_, %-, % ]", ""), "BASE", "")
+	local sameNameTable = {
+		["DMG"] = "DAMAGE",
+		["TEAR"] = "TEARS",
+		["MOVESPEED"] = "SPEED",
+		["MOVEMENT"] = "SPEED",
+		["TEARRANGE"] = "RANGE",
+		["TEARSPEED"] = "SHOTSPEED",
+		["TEARVELOCITY"] = "SHOTSPEED",
+	}
+	if sameNameTable[str] then
+		return sameNameTable[str], base
+	end
+	return str, base
+end
+
+local function ThrowError(str)
+	local str = tostring(str)
+	error(str, 2)
+	Isaac.DebugString(str)
+end
+
 --[[
 mult = {
-	Damage = function / float,
-	Tears = function / float,
-	Speed = function / float,
-	ShotSpeed = function / float,
-	Range = function / float,
-	Luck = function / float,
+	Damage = function(_, player, isBaseStats) [return :  float] / float,
+	Tears = function(_, player, isBaseStats) [return :  float] / float,
+	Speed = function(_, player, isBaseStats) [return :  float] / float,
+	ShotSpeed = function(_, player, isBaseStats) [return :  float] / float,
+	Range = function(_, player, isBaseStats) [return :  float] / float,
+	Luck = function(_, player, isBaseStats) [return :  float] / float,
 }
 ]]
 
@@ -246,6 +307,7 @@ end
 
 
 ---@param itemID	- CollectibleType (int)
+---@return table
 function MultiplierManager:GetItemMultipliers(itemID)
 	local ItemMults = MultiplierManager.ItemMult[itemID] or {}
 	return {
@@ -259,6 +321,7 @@ function MultiplierManager:GetItemMultipliers(itemID)
 end
 
 ---@param trinketID	- TrinketType (int)
+---@return table
 function MultiplierManager:GetTrinketMultipliers(trinketID)
 	local TrinketMults = MultiplierManager.TrinketMult[trinketID] or {}
 	return {
@@ -272,6 +335,7 @@ function MultiplierManager:GetTrinketMultipliers(trinketID)
 end
 
 ---@param playerID	- PlayerType (int)
+---@return table
 function MultiplierManager:GetPlayerMultipliers(playerID)
 	local PlayerMults = MultiplierManager.PlayerMult[playerID] or {}
 	return {
@@ -286,8 +350,45 @@ end
 
 
 ---@param player	- EntityPlayer (usedata)
+---@return float
 function MultiplierManager:GetCrackedCrownMultiplier(player)
 	return 1 + (player:GetTrinketMultiplier(TrinketType.TRINKET_CRACKED_CROWN) * 0.2)
+end
+
+
+---@param ConditionName	- string
+---@param Condition		- function(_, player, isBaseStats) [return : bool] / bool
+---@param Result		- function(_, player, isBaseStats) [return : float] / float
+function MultiplierManager:AddMultiplierCondition(StatType, ConditionName, Condition, Result)
+	local StatType = CheckString(StatType)
+	local ConditionName = tostring(ConditionName)
+
+	if not ConditionName then
+		ThrowError("Error MultiplierManager:GetMultiplierCondition : Argument #2 is nil")
+		return
+	elseif not MultiplierManager.MultCondition[StatType] then
+		ThrowError("Error MultiplierManager:GetMultiplierCondition : Trying to add a stat that doesn't exist")
+		return 
+	end
+
+	if MultiplierManager.MultCondition[StatType][ConditionName] then
+		Isaac.DebugString("MultiplierManager : AddMultiplierCondition - Over writing \"".. ConditionName .."\"")
+	end
+
+	MultiplierManager.MultCondition[StatType][ConditionName] = {}
+	MultiplierManager.MultCondition[StatType][ConditionName].Condition = Condition or true
+	MultiplierManager.MultCondition[StatType][ConditionName].Result = Result or 1
+end
+
+---@param ConditionName	- string
+---@return table
+function MultiplierManager:GetMultiplierCondition(StatType, ConditionName)
+	local StatType = CheckString(StatType)
+	if not MultiplierManager.MultCondition[StatType] then
+		ThrowError("Error MultiplierManager:GetMultiplierCondition : Trying to get a stat that doesn't exist")
+		return {Condition = false, Result = 1}
+	end
+	return MultiplierManager.MultCondition[StatType][ConditionName] or {Condition = false, Result = 1}
 end
 
 
@@ -302,7 +403,7 @@ function MultiplierManager:GetDamageMultiplier(player, IsBaseStats)
 	if type(totalMult) == "function" then totalMult = totalMult(_, player) end
 
 	for itemID, itemMult in pairs(MultiplierManager.ItemMult) do
-		local addDamage = itemMult.Damage or 1
+		local addDamage = itemMult.Damage
 		if (player:HasCollectible(itemID) or player:GetEffects():HasCollectibleEffect(itemID)) and addDamage then
 			if type(addDamage) == "function" then
 				totalMult = totalMult * addDamage(_, player, IsBaseStats)
@@ -313,7 +414,7 @@ function MultiplierManager:GetDamageMultiplier(player, IsBaseStats)
 	end
 
 	for trinketID, trinketMult in pairs(MultiplierManager.TrinketMult) do
-		local addDamage = trinketMult.Damage or 1
+		local addDamage = trinketMult.Damage
 		if (player:HasTrinket(trinketID) or player:GetEffects():HasTrinketEffect(trinketID)) and addDamage then
 			if type(addDamage) == "function" then
 				totalMult = totalMult * addDamage(_, player, IsBaseStats)
@@ -322,30 +423,22 @@ function MultiplierManager:GetDamageMultiplier(player, IsBaseStats)
 			end
 		end
 	end
-
-	if REPENTOGON and REPENTOGON["Real"] then
-		totalMult = totalMult * player:GetD8DamageModifier()
-	end
-
-	--- for star of bethlehem and hallowed ground
-	for _, ent in pairs(Isaac.FindByType(1000, EffectVariant.HALLOWED_GROUND, -1, false, false)) do
-		if ent.Position:DistanceSquared(player.Position) <= 6800 then
-			local StartOfBethlehem = false
-			-- star of bethlehem has a different damage multiplier and doesn't stack
-			for _, ent in pairs(Isaac.FindByType(3, FamiliarVariant.STAR_OF_BETHLEHEM, -1, false, false)) do
-				if ent.Position:DistanceSquared(player.Position) <= 6800 then
-					StartOfBethlehem = true
-					break
-				end
-			end
-			if StartOfBethlehem then
-				totalMult = totalMult * 1.8
+	
+	for name, ConData in pairs(MultiplierManager.MultCondition.DAMAGE) do
+		local condition = ConData.Condition
+		local addDamage = ConData.Result
+		if type(condition) == "function" then
+			condition = condition(_, player, IsBaseStats)
+		end
+		if condition then
+			if type(addDamage) == "function" then
+				totalMult = totalMult * addDamage(_, player, IsBaseStats)
 			else
-				totalMult = totalMult * 1.2
+				totalMult = totalMult * addDamage
 			end
-			break
 		end
 	end
+
 
 	return totalMult
 end
@@ -360,7 +453,7 @@ function MultiplierManager:GetTearsMultiplier(player, IsBaseStats)
 	if type(totalMult) == "function" then totalMult = totalMult(_, player) end
 
 	for itemID, itemMult in pairs(MultiplierManager.ItemMult) do
-		local addTears = itemMult.Tears or 1
+		local addTears = itemMult.Tears
 		if (player:HasCollectible(itemID) or player:GetEffects():HasCollectibleEffect(itemID)) and addTears then
 			if type(addTears) == "function" then
 				totalMult = totalMult * addTears(_, player, IsBaseStats)
@@ -371,7 +464,7 @@ function MultiplierManager:GetTearsMultiplier(player, IsBaseStats)
 	end
 
 	for trinketID, trinketMult in pairs(MultiplierManager.TrinketMult) do
-		local addTears = trinketMult.Tears or 1
+		local addTears = trinketMult.Tears
 		if (player:HasTrinket(trinketID) or player:GetEffects():HasTrinketEffect(trinketID)) and addTears then
 			if type(addTears) == "function" then
 				totalMult = totalMult * addTears(_, player, IsBaseStats)
@@ -381,17 +474,21 @@ function MultiplierManager:GetTearsMultiplier(player, IsBaseStats)
 		end
 	end
 
-	if REPENTOGON and REPENTOGON["Real"] then
-		totalMult = totalMult * player:GetD8FireDelayModifier()
-	end
-
-	--- for star of bethlehem and hallowed ground
-	for _, ent in pairs(Isaac.FindByType(1000, EffectVariant.HALLOWED_GROUND, -1, false, false)) do
-		if ent.Position:DistanceSquared(player.Position) <= 6800 then
-			totalMult = totalMult * 2.5
-			break
+	for name, ConData in pairs(MultiplierManager.MultCondition.TEARS) do
+		local condition = ConData.Condition
+		local addTears = ConData.Result
+		if type(condition) == "function" then
+			condition = condition(_, player, IsBaseStats)
+		end
+		if condition then
+			if type(addTears) == "function" then
+				totalMult = totalMult * addTears(_, player, IsBaseStats)
+			else
+				totalMult = totalMult * addTears
+			end
 		end
 	end
+
 
 	return totalMult
 end
@@ -406,7 +503,7 @@ function MultiplierManager:GetSpeedMultiplier(player, IsBaseStats)
 	if type(totalMult) == "function" then totalMult = totalMult(_, player) end
 
 	for itemID, itemMult in pairs(MultiplierManager.ItemMult) do
-		local addSpeed = itemMult.Speed or 1
+		local addSpeed = itemMult.Speed
 		if (player:HasCollectible(itemID) or player:GetEffects():HasCollectibleEffect(itemID)) and addSpeed then
 			if type(addSpeed) == "function" then
 				totalMult = totalMult * addSpeed(_, player, IsBaseStats)
@@ -417,7 +514,7 @@ function MultiplierManager:GetSpeedMultiplier(player, IsBaseStats)
 	end
 
 	for trinketID, trinketMult in pairs(MultiplierManager.TrinketMult) do
-		local addSpeed = trinketMult.Speed or 1
+		local addSpeed = trinketMult.Speed
 		if (player:HasTrinket(trinketID) or player:GetEffects():HasTrinketEffect(trinketID)) and addSpeed then
 			if type(addSpeed) == "function" then
 				totalMult = totalMult * addSpeed(_, player, IsBaseStats)
@@ -427,9 +524,21 @@ function MultiplierManager:GetSpeedMultiplier(player, IsBaseStats)
 		end
 	end
 
-	if REPENTOGON and REPENTOGON["Real"] then
-		totalMult = totalMult * player:GetD8SpeedModifier()
+	for name, ConData in pairs(MultiplierManager.MultCondition.SPEED) do
+		local condition = ConData.Condition
+		local addSpeed = ConData.Result
+		if type(condition) == "function" then
+			condition = condition(_, player, IsBaseStats)
+		end
+		if condition then
+			if type(addSpeed) == "function" then
+				totalMult = totalMult * addSpeed(_, player, IsBaseStats)
+			else
+				totalMult = totalMult * addSpeed
+			end
+		end
 	end
+
 
 	return totalMult
 end
@@ -444,7 +553,7 @@ function MultiplierManager:GetRangeMultiplier(player, IsBaseStats)
 	if type(totalMult) == "function" then totalMult = totalMult(_, player) end
 
 	for itemID, itemMult in pairs(MultiplierManager.ItemMult) do
-		local addRange = itemMult.Range or 1
+		local addRange = itemMult.Range
 		if (player:HasCollectible(itemID) or player:GetEffects():HasCollectibleEffect(itemID)) and addRange then
 			if type(addRange) == "function" then
 				totalMult = totalMult * addRange(_, player, IsBaseStats)
@@ -455,7 +564,7 @@ function MultiplierManager:GetRangeMultiplier(player, IsBaseStats)
 	end
 
 	for trinketID, trinketMult in pairs(MultiplierManager.TrinketMult) do
-		local addRange = trinketMult.Range or 1
+		local addRange = trinketMult.Range
 		if (player:HasTrinket(trinketID) or player:GetEffects():HasTrinketEffect(trinketID)) and addRange then
 			if type(addRange) == "function" then
 				totalMult = totalMult * addRange(_, player, IsBaseStats)
@@ -465,9 +574,21 @@ function MultiplierManager:GetRangeMultiplier(player, IsBaseStats)
 		end
 	end
 
-	if REPENTOGON and REPENTOGON["Real"] then
-		totalMult = totalMult * player:GetD8RangeModifier()
+	for name, ConData in pairs(MultiplierManager.MultCondition.RANGE) do
+		local condition = ConData.Condition
+		local addRange = ConData.Result
+		if type(condition) == "function" then
+			condition = condition(_, player, IsBaseStats)
+		end
+		if condition then
+			if type(addRange) == "function" then
+				totalMult = totalMult * addRange(_, player, IsBaseStats)
+			else
+				totalMult = totalMult * addRange
+			end
+		end
 	end
+
 
 	return totalMult
 end
@@ -482,7 +603,7 @@ function MultiplierManager:GetShotSpeedMultiplier(player, IsBaseStats)
 	if type(totalMult) == "function" then totalMult = totalMult(_, player) end
 
 	for itemID, itemMult in pairs(MultiplierManager.ItemMult) do
-		local addShotSpeed = itemMult.ShotSpeed or 1
+		local addShotSpeed = itemMult.ShotSpeed
 		if (player:HasCollectible(itemID) or player:GetEffects():HasCollectibleEffect(itemID)) and addShotSpeed then
 			if type(addShotSpeed) == "function" then
 				totalMult = totalMult * addShotSpeed(_, player, IsBaseStats)
@@ -493,7 +614,7 @@ function MultiplierManager:GetShotSpeedMultiplier(player, IsBaseStats)
 	end
 
 	for trinketID, trinketMult in pairs(MultiplierManager.TrinketMult) do
-		local addShotSpeed = trinketMult.ShotSpeed or 1
+		local addShotSpeed = trinketMult.ShotSpeed
 		if (player:HasTrinket(trinketID) or player:GetEffects():HasTrinketEffect(trinketID)) and addShotSpeed then
 			if type(addShotSpeed) == "function" then
 				totalMult = totalMult * addShotSpeed(_, player, IsBaseStats)
@@ -502,6 +623,22 @@ function MultiplierManager:GetShotSpeedMultiplier(player, IsBaseStats)
 			end
 		end
 	end
+
+	for name, ConData in pairs(MultiplierManager.MultCondition.SHOTSPEED) do
+		local condition = ConData.Condition
+		local addShotSpeed = ConData.Result
+		if type(condition) == "function" then
+			condition = condition(_, player, IsBaseStats)
+		end
+		if condition then
+			if type(addShotSpeed) == "function" then
+				totalMult = totalMult * addShotSpeed(_, player, IsBaseStats)
+			else
+				totalMult = totalMult * addShotSpeed
+			end
+		end
+	end
+
 
 	return totalMult
 end
@@ -516,7 +653,7 @@ function MultiplierManager:GetLuckMultiplier(player, IsBaseStats)
 	if type(totalMult) == "function" then totalMult = totalMult(_, player) end
 
 	for itemID, itemMult in pairs(MultiplierManager.ItemMult) do
-		local addLuck = itemMult.Luck or 1
+		local addLuck = itemMult.Luck
 		if (player:HasCollectible(itemID) or player:GetEffects():HasCollectibleEffect(itemID)) and addLuck then
 			if type(addLuck) == "function" then
 				totalMult = totalMult * addLuck(_, player, IsBaseStats)
@@ -527,7 +664,7 @@ function MultiplierManager:GetLuckMultiplier(player, IsBaseStats)
 	end
 
 	for trinketID, trinketMult in pairs(MultiplierManager.TrinketMult) do
-		local addLuck = trinketMult.Luck or 1
+		local addLuck = trinketMult.Luck
 		if (player:HasTrinket(trinketID) or player:GetEffects():HasTrinketEffect(trinketID)) and addLuck then
 			if type(addLuck) == "function" then
 				totalMult = totalMult * addLuck(_, player, IsBaseStats)
@@ -536,6 +673,22 @@ function MultiplierManager:GetLuckMultiplier(player, IsBaseStats)
 			end
 		end
 	end
+
+	for name, ConData in pairs(MultiplierManager.MultCondition.LUCK) do
+		local condition = ConData.Condition
+		local addLuck = ConData.Result
+		if type(condition) == "function" then
+			condition = condition(_, player, IsBaseStats)
+		end
+		if condition then
+			if type(addLuck) == "function" then
+				totalMult = totalMult * addLuck(_, player, IsBaseStats)
+			else
+				totalMult = totalMult * addLuck
+			end
+		end
+	end
+
 
 	return totalMult
 end
@@ -549,30 +702,30 @@ function MultiplierManager:ApplyMultipliers(AddStat, player, MultType)
 	local IsBaseStats = false
 
 	if type(MultType) ~= "string" then
-		print("Error MultiplierManager:ApplyMultipliers : Argument #3 isn't a string")
+		ThrowError("Error MultiplierManager:ApplyMultipliers : Argument #3 isn't a string")
 		return 0
 	end
-	local MultType, IsBaseStats = string.gsub(string.gsub(string.lower(MultType), "[%_, %-, % ]", ""), "base", "")
+	local MultType, IsBaseStats = CheckString(MultType)
 
 	if IsBaseStats > 0 then
 		IsBaseStats = true
 	end
 
 
-	if MultType == "tears" or MultType == "tear" then
+	if MultType == "TEARS" then
 		return AddStat * MultiplierManager:GetTearsMultiplier(player, IsBaseStats)
-	elseif MultType == "damage" then
+	elseif MultType == "DAMAGE" then
 		return AddStat * MultiplierManager:GetDamageMultiplier(player, IsBaseStats)
-	elseif MultType == "speed" or MultType == "movespeed" then
+	elseif MultType == "SPEED" then
 		return AddStat * MultiplierManager:GetSpeedMultiplier(player, IsBaseStats)
-	elseif MultType == "range" or MultType == "tearrange" then
+	elseif MultType == "RANGE" then
 		return AddStat * MultiplierManager:GetRangeMultiplier(player, IsBaseStats)
-	elseif MultType == "shotspeed" or MultType == "tearspeed" then
+	elseif MultType == "SHOTSPEED" then
 		return AddStat * MultiplierManager:GetShotSpeedMultiplier(player, IsBaseStats)
-	elseif MultType == "luck" then
+	elseif MultType == "LUCK" then
 		return AddStat * MultiplierManager:GetLuckMultiplier(player, IsBaseStats)
 	end
 
-	print("Error MultiplierManager:ApplyMultipliers : Argument #3 is an unknown value")
+	ThrowError("Error MultiplierManager:ApplyMultipliers : Argument #3 is an unknown value")
 	return 0
 end

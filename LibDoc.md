@@ -504,6 +504,67 @@ Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 
 ---
 
+##AddMultiplierCondition
+
+```lua
+function MultiplierManager:AddMultiplierCondition(StatType : string, ConditionName : string, Condition : function(_, player : userdata, IsBaseStat : bool) or bool,  Result : function(_, player : userdata, IsBaseStat : bool) or float)
+```
+
+- `StatType` : String - Stat type (damage, tears, range, etc)
+
+- `ConditionName` : String - Name of the condition
+
+- `Condition` : Function or Bool - Returns '**True**' or '**False**' if the condition is met. You can set it as '**True**' to be allway be execute
+
+- `Result` : function or float - Returns the multiplier to apply
+
+###Example
+
+```lua
+function MultiplierManager:AddMultiplierCondition(
+    "Damage", -- stat type
+    "Pentagram multiplier", -- name of the condition
+    function(_, player) -- condition
+        -- return true if the player has more than 1 pentagram
+        return player:GetCollectibleNum(CollectibleType.COLLECTIBLE_PENTAGRAM) > 1
+    end,
+    -- give 1.5 damage multiplier
+    1.5
+)
+
+
+function MultiplierManager:AddMultiplierCondition(
+    "Tears", -- stat type
+    "Cry Onion multiplier", -- name of the condition
+    true, -- is allways gives a result
+    -- give + 20% tears multiplier by how many crying onions has the player
+    function(_, player)
+        local onionNum = player:GetCollectibleNum(CollectibleType.COLLECTIBLE_CRYING_ONION)
+        return 1 + 0.2 * onionNum
+    end
+)
+```
+
+##GetMultiplierCondition
+
+```lua
+function MultiplierManager:GetMultiplierCondition(StatType : string, ConditionName : string)
+```
+
+- `StatType` : String - Stat type (damage, tears, range, etc)
+
+- `ConditionName` : String - Name of the condition
+
+- `Return` : Table -
+  
+  - `Condition` - Function(_, player : userdata, IsBaseStat : Bool) [return : Bool] or Bool
+  
+  - `Result` - Function(_, player : userdata, IsBaseStat : Bool) [return : Float] or Float
+
+    
+
+---
+
 ## REPENTOGON Exclusive
 
 The next items / multipliers only apply if REPENTOGON is installed
