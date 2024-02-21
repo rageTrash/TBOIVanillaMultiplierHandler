@@ -1,4 +1,4 @@
-local VERSION = 1.3
+local VERSION = 1.5
 MultiplierManager = MultiplierManager or {}
 
 if MultiplierManager and MultiplierManager.Version and VERSION <= MultiplierManager.Version then return end
@@ -32,7 +32,7 @@ MultiplierManager.PlayerMult = {
 
 MultiplierManager.ItemMult = {
 	[CollectibleType.COLLECTIBLE_INNER_EYE]				= {Tears = function(_, player)
-															if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_20_20) then return 1 end
+															if player:HasCollectible(CollectibleType.COLLECTIBLE_20_20) then return 1 end
 															return 0.51
 														end},
     [CollectibleType.COLLECTIBLE_CRICKETS_HEAD] 		= {Damage = 1.5},
@@ -40,20 +40,20 @@ MultiplierManager.ItemMult = {
     [CollectibleType.COLLECTIBLE_NUMBER_ONE]			= {Range = 0.8},
     [CollectibleType.COLLECTIBLE_BLOOD_OF_THE_MARTYR]	= {Damage = function(_, player)
 															if not player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_BOOK_OF_BELIAL) then return 1 end
-															if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_CRICKETS_HEAD) or
+															if player:HasCollectible(CollectibleType.COLLECTIBLE_CRICKETS_HEAD) or
 																player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_MAGIC_MUSHROOM) then 
 																return 1
 															end
 															return 1.5
 													    end},
     [CollectibleType.COLLECTIBLE_MAGIC_MUSHROOM] 		= {Damage = function(_, player)
-													    	if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_CRICKETS_HEAD) then return 1 end
+													    	if player:HasCollectible(CollectibleType.COLLECTIBLE_CRICKETS_HEAD) then return 1 end
 													    	return 1.5
 													    end},
 	[CollectibleType.COLLECTIBLE_DR_FETUS]				= {Tears = function(_, player)
 															if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_HAEMOLACRIA) or
-																player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_MOMS_KNIFE) or
-																player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_MONSTROS_LUNG)
+																player:HasCollectible(CollectibleType.COLLECTIBLE_MOMS_KNIFE) or
+																player:HasCollectible(CollectibleType.COLLECTIBLE_MONSTROS_LUNG)
 																then
 																return 1
 															end
@@ -61,59 +61,59 @@ MultiplierManager.ItemMult = {
 														end},
 	[CollectibleType.COLLECTIBLE_BRIMSTONE]				= {Damage = function(_, player)
 															if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_HAEMOLACRIA) or
-																player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_MOMS_KNIFE) then
+																player:HasCollectible(CollectibleType.COLLECTIBLE_MOMS_KNIFE) then
 																return 1 
 															elseif player:GetEffects():GetCollectibleEffectNum(CollectibleType.COLLECTIBLE_BRIMSTONE) >= 2 then
 																return 1.2
-															elseif player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_TECHNOLOGY) then
+															elseif player:HasCollectible(CollectibleType.COLLECTIBLE_TECHNOLOGY) then
 																return 1.5
 															end
 
 															return 1
 														end,
 														Tears = function(_, player)
-															if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_MOMS_KNIFE) then return 1 end
+															if player:HasCollectible(CollectibleType.COLLECTIBLE_MOMS_KNIFE) then return 1 end
 															return 0.33
 														end},
     [CollectibleType.COLLECTIBLE_ODD_MUSHROOM_THIN] 	= {Damage = 0.9},
     [CollectibleType.COLLECTIBLE_IPECAC]				= {Tears = 0.33,
     													Range = function(_, player)
-    														if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_NUMBER_ONE) then return 1 end
+    														if player:HasCollectible(CollectibleType.COLLECTIBLE_NUMBER_ONE) then return 1 end
     														return 0.8
     													end,
     													ShotSpeed = 0.2},
 	[CollectibleType.COLLECTIBLE_TECHNOLOGY_2]			= {Tears = 0.66},
 	[CollectibleType.COLLECTIBLE_MUTANT_SPIDER]			= {Tears = function(_, player)
-															if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_20_20) then return 1 end
+															if player:HasCollectible(CollectibleType.COLLECTIBLE_20_20) then return 1 end
 															return 0.42
 														end},
     [CollectibleType.COLLECTIBLE_POLYPHEMUS] 			= {Damage = 2,
     													Tears = function(_, player)
-    														if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_INNER_EYE) or
-    															player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_MUTANT_SPIDER) or
-    															player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_20_20) or
-    															player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_C_SECTION) then
+    														if player:HasCollectible(CollectibleType.COLLECTIBLE_INNER_EYE) or
+    															player:HasCollectible(CollectibleType.COLLECTIBLE_MUTANT_SPIDER) or
+    															player:HasCollectible(CollectibleType.COLLECTIBLE_20_20) or
+    															player:HasCollectible(CollectibleType.COLLECTIBLE_C_SECTION) then
     															return 1
     														end
     														return 0.42
     													end},
     [CollectibleType.COLLECTIBLE_SACRED_HEART] 			= {Damage = 2.3},
     [CollectibleType.COLLECTIBLE_CRICKETS_BODY]			= {Range = function(_, player)
-    														if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_IPECAC) then
+    														if player:HasCollectible(CollectibleType.COLLECTIBLE_IPECAC) then
     															return 1
     														end
     														return 0.8
     													end},
     [CollectibleType.COLLECTIBLE_MONSTROS_LUNG]			= {Tears = function(_, player)
     														if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_BRIMSTONE) or
-    															player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_EPIC_FETUS) or
-    															player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_MOMS_KNIFE) or
-    															player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_LUDOVICO_TECHNIQUE) or
-    															player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_TECHNOLOGY) or
-    															player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_SPIRIT_SWORD) or
-    															player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_C_SECTION) then
+    															player:HasCollectible(CollectibleType.COLLECTIBLE_EPIC_FETUS) or
+    															player:HasCollectible(CollectibleType.COLLECTIBLE_MOMS_KNIFE) or
+    															player:HasCollectible(CollectibleType.COLLECTIBLE_LUDOVICO_TECHNIQUE) or
+    															player:HasCollectible(CollectibleType.COLLECTIBLE_TECHNOLOGY) or
+    															player:HasCollectible(CollectibleType.COLLECTIBLE_SPIRIT_SWORD) or
+    															player:HasCollectible(CollectibleType.COLLECTIBLE_C_SECTION) then
     															return 1
-    														elseif player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_TECH_X) then
+    														elseif player:HasCollectible(CollectibleType.COLLECTIBLE_TECH_X) then
     															return 0.32 --close enough
     														end
     	        											return 0.23
@@ -121,16 +121,16 @@ MultiplierManager.ItemMult = {
     [CollectibleType.COLLECTIBLE_20_20] 				= {Damage = 0.8},
     [CollectibleType.COLLECTIBLE_EVES_MASCARA] 			= {Damage = 2, Tears = 0.66},
     [CollectibleType.COLLECTIBLE_SOY_MILK] 				= {Damage = function(_, player)
-															if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_ALMOND_MILK) then return 1 end
+															if player:HasCollectible(CollectibleType.COLLECTIBLE_ALMOND_MILK) then return 1 end
 															return 0.2
 													    end,
 														Tears = function(_, player)
-															if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_ALMOND_MILK) then return 1 end
+															if player:HasCollectible(CollectibleType.COLLECTIBLE_ALMOND_MILK) then return 1 end
 															return 5.5
 														end},
 	[CollectibleType.COLLECTIBLE_DEAD_EYE] 				= {Damage = function(_, player)
 															if not (REPENTOGON and REPENTOGON["Real"]) or
-																player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_TECH_X) then
+																player:HasCollectible(CollectibleType.COLLECTIBLE_TECH_X) then
 																return 1
 															end
 															return 1 + (player:GetDeadEyeCharge() * 0.25)
@@ -141,19 +141,19 @@ MultiplierManager.ItemMult = {
 													    end},
 	[CollectibleType.COLLECTIBLE_HAEMOLACRIA] 			= {Damage = 1.5,
 														Tears = function(_, player)
-															if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_MONSTROS_LUNG) or
-    															player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_EPIC_FETUS) or
-    															player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_MOMS_KNIFE) or
-    															player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_LUDOVICO_TECHNIQUE) or
-    															player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_SPIRIT_SWORD) or
-    															player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_C_SECTION) then
+															if player:HasCollectible(CollectibleType.COLLECTIBLE_MONSTROS_LUNG) or
+    															player:HasCollectible(CollectibleType.COLLECTIBLE_EPIC_FETUS) or
+    															player:HasCollectible(CollectibleType.COLLECTIBLE_MOMS_KNIFE) or
+    															player:HasCollectible(CollectibleType.COLLECTIBLE_LUDOVICO_TECHNIQUE) or
+    															player:HasCollectible(CollectibleType.COLLECTIBLE_SPIRIT_SWORD) or
+    															player:HasCollectible(CollectibleType.COLLECTIBLE_C_SECTION) then
 																return 1
-															elseif player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_IPECAC) then return 0.3 end
+															elseif player:HasCollectible(CollectibleType.COLLECTIBLE_IPECAC) then return 0.76 end -- is closer
     														return 0.5
     													end,
 														Range = function(_, player)
-    														if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_IPECAC) or
-    															player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_CRICKETS_BODY) then
+    														if player:HasCollectible(CollectibleType.COLLECTIBLE_IPECAC) or
+    															player:HasCollectible(CollectibleType.COLLECTIBLE_CRICKETS_BODY) then
     															return 1
     														end
     														return 0.8
