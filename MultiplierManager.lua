@@ -1,4 +1,4 @@
-local VERSION = 1.5
+local VERSION = 2
 MultiplierManager = MultiplierManager or {}
 
 if MultiplierManager and MultiplierManager.Version and VERSION <= MultiplierManager.Version then return end
@@ -10,8 +10,8 @@ MultiplierManager.PlayerMult = {
 	[PlayerType.PLAYER_JUDAS] 			= {Damage = 1.35},
 	[PlayerType.PLAYER_BLUEBABY] 		= {Damage = 1.05},
 	[PlayerType.PLAYER_EVE] 			= {Damage = function (_, player)
-									      if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_WHORE_OF_BABYLON) then return 1 end
-									      return 0.75
+									    	if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_WHORE_OF_BABYLON) then return 1 end
+									    	return 0.75
 									    end},
 	[PlayerType.PLAYER_AZAZEL] 			= {Damage = 1.5, Tears = 0.267},
 	[PlayerType.PLAYER_LAZARUS2] 		= {Damage = 1.4},
@@ -186,11 +186,11 @@ MultiplierManager.TrinketMult = {
 }
 
 
-MultiplierManager.MultCondition = {
+MultiplierManager.MiscMult = {
 	["DAMAGE"] = {
 		["D8 Mult"] = {
 			Condition = function() return (REPENTOGON and REPENTOGON["Real"]) end,
-			Result = function(_, player)
+			Mult = function(_, player)
 				return player:GetD8DamageModifier()
 			end
 		},
@@ -203,7 +203,7 @@ MultiplierManager.MultCondition = {
 				end
 				return false
 			end,
-			Result = function(_, player)
+			Mult = function(_, player)
 				for _, ent in pairs(Isaac.FindByType(3, FamiliarVariant.STAR_OF_BETHLEHEM, -1, false, false)) do
 					if ent.Position:DistanceSquared(player.Position) <= 6800 then
 						return 1.8
@@ -216,7 +216,7 @@ MultiplierManager.MultCondition = {
 	["TEARS"] = {
 		["D8 Mult"] = {
 			Condition = function() return (REPENTOGON and REPENTOGON["Real"]) end,
-			Result = function(_, player)
+			Mult = function(_, player)
 				return player:GetD8FireDelayModifier()
 			end
 		},
@@ -229,13 +229,13 @@ MultiplierManager.MultCondition = {
 				end
 				return false
 			end,
-			Result = 2.5
+			Mult = 2.5
 		}
 	},
 	["SPEED"] = {
 		["D8 Mult"] = {
 			Condition = function() return (REPENTOGON and REPENTOGON["Real"]) end,
-			Result = function(_, player)
+			Mult = function(_, player)
 				return player:GetD8SpeedModifier()
 			end
 		},
@@ -243,7 +243,7 @@ MultiplierManager.MultCondition = {
 	["RANGE"] = {
 		["D8 Mult"] = {
 			Condition = function() return (REPENTOGON and REPENTOGON["Real"]) end,
-			Result = function(_, player)
+			Mult = function(_, player)
 				return player:GetD8RangeModifier()
 			end
 		},
@@ -273,7 +273,13 @@ end
 local function ThrowError(str)
 	local str = tostring(str)
 	error(str, 2)
-	Isaac.DebugString(str)
+end
+
+local function GetPlayerIndex(playerPtr)
+	if playerPtr:GetPlayerType() == PlayerType.PLAYER_THESOUL_B and playerPtr:GetMainTwin() ~= nil then
+		playerPtr = playerPtr:GetMainTwin()
+	end
+	return tostring(GetPtrHash(playerPtr))
 end
 
 --[[
@@ -289,26 +295,30 @@ mult = {
 
 ---@param itemID	- CollectibleType (int)
 ---@param mult 		- table
-function MultiplierManager:RegisterItemMultipliers(itemID, mult)
+function MultiplierManager:RegisterItem(itemID, mult)
 	MultiplierManager.ItemMult[itemID] = mult
 end
+function MultiplierManager:RegisterItemMultipliers(itemID, mult) MultiplierManager:RegisterItem(itemID, mult) end -- old name to not cause errors
 
 ---@param trinketID	- TrinketType (int)
 ---@param mult 		- table
-function MultiplierManager:RegisterTrinketMultipliers(trinketID, mult)
+function MultiplierManager:RegisterTrinket(trinketID, mult)
 	MultiplierManager.TrinketMult[trinketID] = mult
 end
+function MultiplierManager:RegisterTrinketMultipliers(trinketID, mult) MultiplierManager:RegisterTrinket(trinketID, mult) end -- old name to not cause errors
 
 ---@param playerID	- PlayerType (int)
 ---@param mult 		- table
-function MultiplierManager:RegisterPlayerMultipliers(playerID, mult)
+function MultiplierManager:RegisterPlayer(playerID, mult)
 	MultiplierManager.PlayerMult[playerID] = mult
 end
+function MultiplierManager:RegisterPlayerMultipliers(playerID, mult) MultiplierManager:RegisterPlayer(playerID, mult) end -- old name to not cause errors
+
 
 
 ---@param itemID	- CollectibleType (int)
 ---@return table
-function MultiplierManager:GetItemMultipliers(itemID)
+function MultiplierManager:GetItem(itemID)
 	local ItemMults = MultiplierManager.ItemMult[itemID] or {}
 	return {
 		Damage 		= ItemMults.Damage or 1,
@@ -319,10 +329,11 @@ function MultiplierManager:GetItemMultipliers(itemID)
 		Luck 		= ItemMults.Luck or 1,
 	}
 end
+function MultiplierManager:GetItemMultipliers(itemID) return MultiplierManager:GetItem(itemID) end -- old name to not cause errors
 
 ---@param trinketID	- TrinketType (int)
 ---@return table
-function MultiplierManager:GetTrinketMultipliers(trinketID)
+function MultiplierManager:GetTrinket(trinketID)
 	local TrinketMults = MultiplierManager.TrinketMult[trinketID] or {}
 	return {
 		Damage 		= TrinketMults.Damage or 1,
@@ -333,10 +344,11 @@ function MultiplierManager:GetTrinketMultipliers(trinketID)
 		Luck 		= TrinketMults.Luck or 1,
 	}
 end
+function MultiplierManager:GetTrinketMultipliers(trinketID) return MultiplierManager:GetTrinket(trinketID) end -- old name to not cause errors
 
 ---@param playerID	- PlayerType (int)
 ---@return table
-function MultiplierManager:GetPlayerMultipliers(playerID)
+function MultiplierManager:GetPlayer(playerID)
 	local PlayerMults = MultiplierManager.PlayerMult[playerID] or {}
 	return {
 		Damage 		= PlayerMults.Damage or 1,
@@ -347,58 +359,78 @@ function MultiplierManager:GetPlayerMultipliers(playerID)
 		Luck 		= PlayerMults.Luck or 1,
 	}
 end
+function MultiplierManager:GetPlayerMultipliers(playerID) return MultiplierManager:GetPlayer(playerID) end -- old name to not cause errors
+
 
 
 ---@param player	- EntityPlayer (usedata)
 ---@return float
-function MultiplierManager:GetCrackedCrownMultiplier(player)
+function MultiplierManager:GetCrackedCrown(player)
 	return 1 + (player:GetTrinketMultiplier(TrinketType.TRINKET_CRACKED_CROWN) * 0.2)
 end
+function MultiplierManager:GetCrackedCrownMultiplier(player) return MultiplierManager:GetCrackedCrown(player) end -- old name to not cause errors
 
 
----@param ConditionName	- string
+
+---@param MultName		- string
 ---@param Condition		- function(_, player, isBaseStats) [return : bool] / bool
----@param Result		- function(_, player, isBaseStats) [return : float] / float
-function MultiplierManager:AddMultiplierCondition(StatType, ConditionName, Condition, Result)
+---@param Mult			- function(_, player, isBaseStats) [return : float] / float
+function MultiplierManager:AddMiscMultiplier(StatType, MultName, Condition, Mult)
 	local StatType = CheckString(StatType)
-	local ConditionName = tostring(ConditionName)
+	local MultName = tostring(MultName)
 
-	if not ConditionName then
-		ThrowError("Error MultiplierManager:GetMultiplierCondition : Argument #2 is nil")
+	if not MultName then
+		ThrowError("Error MultiplierManager:AddMiscMultiplier : Argument #2 is nil")
 		return
-	elseif not MultiplierManager.MultCondition[StatType] then
-		ThrowError("Error MultiplierManager:GetMultiplierCondition : Trying to add a stat that doesn't exist")
+	elseif not MultiplierManager.MiscMult[StatType] then
+		ThrowError("Error MultiplierManager:AddMiscMultiplier : Trying to add a stat that doesn't exist")
 		return 
 	end
 
-	if MultiplierManager.MultCondition[StatType][ConditionName] then
-		Isaac.DebugString("MultiplierManager : AddMultiplierCondition - Over writing \"".. ConditionName .."\"")
+	if MultiplierManager.MiscMult[StatType][MultName] then
+		Isaac.DebugString("MultiplierManager:AddMiscMultiplier : Over writing \"".. MultName .."\"")
 	end
 
-	MultiplierManager.MultCondition[StatType][ConditionName] = {}
-	MultiplierManager.MultCondition[StatType][ConditionName].Condition = Condition or true
-	MultiplierManager.MultCondition[StatType][ConditionName].Result = Result or 1
+	MultiplierManager.MiscMult[StatType][MultName] = {}
+	MultiplierManager.MiscMult[StatType][MultName].Condition = Condition or true
+	MultiplierManager.MiscMult[StatType][MultName].Mult = Mult or 1
 end
+function MultiplierManager:AddMultiplierCondition(StatType, MultName, Condition, Mult) MultiplierManager:AddMiscMultiplier(StatType, MultName, Condition, Mult) end -- old name to not cause errors
 
----@param ConditionName	- string
+
+---@param MultName	- string
 ---@return table
-function MultiplierManager:GetMultiplierCondition(StatType, ConditionName)
+function MultiplierManager:GetMiscMultiplier(StatType, MultName)
 	local StatType = CheckString(StatType)
-	if not MultiplierManager.MultCondition[StatType] then
-		ThrowError("Error MultiplierManager:GetMultiplierCondition : Trying to get a stat that doesn't exist")
-		return {Condition = false, Result = 1}
+	if not MultiplierManager.MiscMult[StatType] then
+		ThrowError("Error MultiplierManager:GetMiscMultiplier : Trying to get a stat that doesn't exist")
+		return {Condition = false, Mult = 1}
 	end
-	return MultiplierManager.MultCondition[StatType][ConditionName] or {Condition = false, Result = 1}
+	return MultiplierManager.MiscMult[StatType][MultName] or {Condition = false, Mult = 1}
+end
+function MultiplierManager:GetMultiplierCondition(StatType, MultName) -- old name to not cause errors
+	local mults = MultiplierManager:GetMiscMultiplier(StatType, MultName)
+	return {Condition = mults.Condition, Result = mults.Mult} -- serve the old way :)
 end
 
 
 
+
+MultiplierManager.CacheMult = {}
 
 ---@param player		- EntityPlayer (usedata)
 ---@param IsBaseStats	- boolean - Default false
-function MultiplierManager:GetDamageMultiplier(player, IsBaseStats)
+function MultiplierManager:GetPlayerDamage(player, IsBaseStats)
 	local IsBaseStats = IsBaseStats or false
-	local totalMult = MultiplierManager:GetPlayerMultipliers(player:GetPlayerType()).Damage
+
+	local pIndex = GetPlayerIndex(player)
+	local pCache = MultiplierManager.CacheMult[pIndex]
+	if pCache and pCache.Damage and pCache.Damage.Mult and (pCache.Damage.IsBaseStats and pCache.Damage.IsBaseStats == IsBaseStats) and (pCache.Damage.FrameCached and pCache.Damage.FrameCached == Game():GetFrameCount()) then
+		return pCache.Damage.Mult
+	end
+
+
+	local totalMult = MultiplierManager:GetPlayer(player:GetPlayerType()).Damage
 
 	if type(totalMult) == "function" then totalMult = totalMult(_, player) end
 
@@ -424,9 +456,9 @@ function MultiplierManager:GetDamageMultiplier(player, IsBaseStats)
 		end
 	end
 	
-	for name, ConData in pairs(MultiplierManager.MultCondition.DAMAGE) do
+	for name, ConData in pairs(MultiplierManager.MiscMult.DAMAGE) do
 		local condition = ConData.Condition
-		local addDamage = ConData.Result
+		local addDamage = ConData.Mult
 		if type(condition) == "function" then
 			condition = condition(_, player, IsBaseStats)
 		end
@@ -439,16 +471,26 @@ function MultiplierManager:GetDamageMultiplier(player, IsBaseStats)
 		end
 	end
 
-
+	MultiplierManager.CacheMult[pIndex] = MultiplierManager.CacheMult[pIndex] or {}
+	MultiplierManager.CacheMult[pIndex].Damage = {Mult = totalMult, IsBaseStats = IsBaseStats, FrameCached = Game():GetFrameCount()}
 	return totalMult
 end
+function MultiplierManager:GetDamageMultiplier(player, IsBaseStats) return MultiplierManager:GetPlayerDamage(player, IsBaseStats) end -- old name to not cause errors
 
 
 ---@param player		- EntityPlayer (usedata)
 ---@param IsBaseStats	- boolean - Default false
-function MultiplierManager:GetTearsMultiplier(player, IsBaseStats)
+function MultiplierManager:GetPlayerTears(player, IsBaseStats)
 	local IsBaseStats = IsBaseStats or false
-	local totalMult = MultiplierManager:GetPlayerMultipliers(player:GetPlayerType()).Tears
+
+	local pIndex = GetPlayerIndex(player)
+	local pCache = MultiplierManager.CacheMult[pIndex]
+	if pCache and pCache.Tears and pCache.Tears.Mult and (pCache.Tears.IsBaseStats and pCache.Tears.IsBaseStats == IsBaseStats) and (pCache.Tears.FrameCached and pCache.Tears.FrameCached == Game():GetFrameCount()) then
+		return pCache.Tears.Mult
+	end
+
+
+	local totalMult = MultiplierManager:GetPlayer(player:GetPlayerType()).Tears
 
 	if type(totalMult) == "function" then totalMult = totalMult(_, player) end
 
@@ -474,9 +516,9 @@ function MultiplierManager:GetTearsMultiplier(player, IsBaseStats)
 		end
 	end
 
-	for name, ConData in pairs(MultiplierManager.MultCondition.TEARS) do
+	for name, ConData in pairs(MultiplierManager.MiscMult.TEARS) do
 		local condition = ConData.Condition
-		local addTears = ConData.Result
+		local addTears = ConData.Mult
 		if type(condition) == "function" then
 			condition = condition(_, player, IsBaseStats)
 		end
@@ -489,16 +531,26 @@ function MultiplierManager:GetTearsMultiplier(player, IsBaseStats)
 		end
 	end
 
-
+	MultiplierManager.CacheMult[pIndex] = MultiplierManager.CacheMult[pIndex] or {}
+	MultiplierManager.CacheMult[pIndex].Tears = {Mult = totalMult, IsBaseStats = IsBaseStats, FrameCached = Game():GetFrameCount()}
 	return totalMult
 end
+function MultiplierManager:GetTearsMultiplier(player, IsBaseStats) return MultiplierManager:GetPlayerTears(player, IsBaseStats) end -- old name to not cause errors
 
 
 ---@param player		- EntityPlayer (usedata)
 ---@param IsBaseStats	- boolean - Default false
-function MultiplierManager:GetSpeedMultiplier(player, IsBaseStats)
+function MultiplierManager:GetPlayerSpeed(player, IsBaseStats)
 	local IsBaseStats = IsBaseStats or false
-	local totalMult = MultiplierManager:GetPlayerMultipliers(player:GetPlayerType()).Speed
+
+	local pIndex = GetPlayerIndex(player)
+	local pCache = MultiplierManager.CacheMult[pIndex]
+	if pCache and pCache.Speed and pCache.Speed.Mult and (pCache.Speed.IsBaseStats and pCache.Speed.IsBaseStats == IsBaseStats) and (pCache.Speed.FrameCached and pCache.Speed.FrameCached == Game():GetFrameCount()) then
+		return pCache.Speed.Mult
+	end
+
+
+	local totalMult = MultiplierManager:GetPlayer(player:GetPlayerType()).Speed
 
 	if type(totalMult) == "function" then totalMult = totalMult(_, player) end
 
@@ -524,9 +576,9 @@ function MultiplierManager:GetSpeedMultiplier(player, IsBaseStats)
 		end
 	end
 
-	for name, ConData in pairs(MultiplierManager.MultCondition.SPEED) do
+	for name, ConData in pairs(MultiplierManager.MiscMult.SPEED) do
 		local condition = ConData.Condition
-		local addSpeed = ConData.Result
+		local addSpeed = ConData.Mult
 		if type(condition) == "function" then
 			condition = condition(_, player, IsBaseStats)
 		end
@@ -539,16 +591,26 @@ function MultiplierManager:GetSpeedMultiplier(player, IsBaseStats)
 		end
 	end
 
-
+	MultiplierManager.CacheMult[pIndex] = MultiplierManager.CacheMult[pIndex] or {}
+	MultiplierManager.CacheMult[pIndex].Speed = {Mult = totalMult, IsBaseStats = IsBaseStats, FrameCached = Game():GetFrameCount()}
 	return totalMult
 end
+function MultiplierManager:GetSpeedMultiplier(player, IsBaseStats) return MultiplierManager:GetPlayerSpeed(player, IsBaseStats) end -- old name to not cause errors
 
 
 ---@param player		- EntityPlayer (usedata)
 ---@param IsBaseStats	- boolean - Default false
-function MultiplierManager:GetRangeMultiplier(player, IsBaseStats)
+function MultiplierManager:GetPlayerRange(player, IsBaseStats)
 	local IsBaseStats = IsBaseStats or false
-	local totalMult = MultiplierManager:GetPlayerMultipliers(player:GetPlayerType()).Range
+
+	local pIndex = GetPlayerIndex(player)
+	local pCache = MultiplierManager.CacheMult[pIndex]
+	if pCache and pCache.Range and pCache.Range.Mult and (pCache.Range.IsBaseStats and pCache.Range.IsBaseStats == IsBaseStats) and (pCache.Range.FrameCached and pCache.Range.FrameCached == Game():GetFrameCount()) then
+		return pCache.Range.Mult
+	end
+
+
+	local totalMult = MultiplierManager:GetPlayer(player:GetPlayerType()).Range
 
 	if type(totalMult) == "function" then totalMult = totalMult(_, player) end
 
@@ -574,9 +636,9 @@ function MultiplierManager:GetRangeMultiplier(player, IsBaseStats)
 		end
 	end
 
-	for name, ConData in pairs(MultiplierManager.MultCondition.RANGE) do
+	for name, ConData in pairs(MultiplierManager.MiscMult.RANGE) do
 		local condition = ConData.Condition
-		local addRange = ConData.Result
+		local addRange = ConData.Mult
 		if type(condition) == "function" then
 			condition = condition(_, player, IsBaseStats)
 		end
@@ -589,16 +651,26 @@ function MultiplierManager:GetRangeMultiplier(player, IsBaseStats)
 		end
 	end
 
-
+	MultiplierManager.CacheMult[pIndex] = MultiplierManager.CacheMult[pIndex] or {}
+	MultiplierManager.CacheMult[pIndex].Range = {Mult = totalMult, IsBaseStats = IsBaseStats, FrameCached = Game():GetFrameCount()}
 	return totalMult
 end
+function MultiplierManager:GetRangeMultiplier(player, IsBaseStats) return MultiplierManager:GetPlayerRange(player, IsBaseStats) end -- old name to not cause errors
 
 
 ---@param player		- EntityPlayer (usedata)
 ---@param IsBaseStats	- boolean - Default false
-function MultiplierManager:GetShotSpeedMultiplier(player, IsBaseStats)
+function MultiplierManager:GetPlayerShotSpeed(player, IsBaseStats)
 	local IsBaseStats = IsBaseStats or false
-	local totalMult = MultiplierManager:GetPlayerMultipliers(player:GetPlayerType()).ShotSpeed
+
+	local pIndex = GetPlayerIndex(player)
+	local pCache = MultiplierManager.CacheMult[pIndex]
+	if pCache and pCache.ShotSpeed and pCache.ShotSpeed.Mult and (pCache.ShotSpeed.IsBaseStats and pCache.ShotSpeed.IsBaseStats == IsBaseStats) and (pCache.ShotSpeed.FrameCached and pCache.ShotSpeed.FrameCached == Game():GetFrameCount()) then
+		return pCache.ShotSpeed.Mult
+	end
+
+
+	local totalMult = MultiplierManager:GetPlayer(player:GetPlayerType()).ShotSpeed
 
 	if type(totalMult) == "function" then totalMult = totalMult(_, player) end
 
@@ -624,9 +696,9 @@ function MultiplierManager:GetShotSpeedMultiplier(player, IsBaseStats)
 		end
 	end
 
-	for name, ConData in pairs(MultiplierManager.MultCondition.SHOTSPEED) do
+	for name, ConData in pairs(MultiplierManager.MiscMult.SHOTSPEED) do
 		local condition = ConData.Condition
-		local addShotSpeed = ConData.Result
+		local addShotSpeed = ConData.Mult
 		if type(condition) == "function" then
 			condition = condition(_, player, IsBaseStats)
 		end
@@ -639,16 +711,26 @@ function MultiplierManager:GetShotSpeedMultiplier(player, IsBaseStats)
 		end
 	end
 
-
+	MultiplierManager.CacheMult[pIndex] = MultiplierManager.CacheMult[pIndex] or {}
+	MultiplierManager.CacheMult[pIndex].ShotSpeed = {Mult = totalMult, IsBaseStats = IsBaseStats, FrameCached = Game():GetFrameCount()}
 	return totalMult
 end
+function MultiplierManager:GetShotSpeedMultiplier(player, IsBaseStats) return MultiplierManager:GetPlayerShotSpeed(player, IsBaseStats) end -- old name to not cause errors
 
 
 ---@param player		- EntityPlayer (usedata)
 ---@param IsBaseStats	- boolean - Default false
-function MultiplierManager:GetLuckMultiplier(player, IsBaseStats)
+function MultiplierManager:GetPlayerLuck(player, IsBaseStats)
 	local IsBaseStats = IsBaseStats or false
-	local totalMult = MultiplierManager:GetPlayerMultipliers(player:GetPlayerType()).Luck
+
+	local pIndex = GetPlayerIndex(player)
+	local pCache = MultiplierManager.CacheMult[pIndex]
+	if pCache and pCache.Luck and pCache.Luck.Mult and (pCache.Luck.IsBaseStats and pCache.Luck.IsBaseStats == IsBaseStats) and (pCache.Luck.FrameCached and pCache.Luck.FrameCached == Game():GetFrameCount()) then
+		return pCache.Luck.Mult
+	end
+
+
+	local totalMult = MultiplierManager:GetPlayer(player:GetPlayerType()).Luck
 
 	if type(totalMult) == "function" then totalMult = totalMult(_, player) end
 
@@ -674,9 +756,9 @@ function MultiplierManager:GetLuckMultiplier(player, IsBaseStats)
 		end
 	end
 
-	for name, ConData in pairs(MultiplierManager.MultCondition.LUCK) do
+	for name, ConData in pairs(MultiplierManager.MiscMult.LUCK) do
 		local condition = ConData.Condition
-		local addLuck = ConData.Result
+		local addLuck = ConData.Mult
 		if type(condition) == "function" then
 			condition = condition(_, player, IsBaseStats)
 		end
@@ -689,43 +771,46 @@ function MultiplierManager:GetLuckMultiplier(player, IsBaseStats)
 		end
 	end
 
-
+	MultiplierManager.CacheMult[pIndex] = MultiplierManager.CacheMult[pIndex] or {}
+	MultiplierManager.CacheMult[pIndex].Luck = {Mult = totalMult, IsBaseStats = IsBaseStats, FrameCached = Game():GetFrameCount()}
 	return totalMult
 end
+function MultiplierManager:GetLuckMultiplier(player, IsBaseStats) return MultiplierManager:GetPlayerLuck(player, IsBaseStats) end -- old name to not cause errors
 
 
 ---@param AddStat		- float
 ---@param player		- EntityPlayer (usedata)
----@param MultType		- string
-function MultiplierManager:ApplyMultipliers(AddStat, player, MultType)
+---@param StatType		- string
+function MultiplierManager:ApplyMultiplier(AddStat, player, StatType)
 	local AddStat = type(AddStat) == "number" and AddStat or 0
 	local IsBaseStats = false
 
-	if type(MultType) ~= "string" then
-		ThrowError("Error MultiplierManager:ApplyMultipliers : Argument #3 isn't a string")
+	if type(StatType) ~= "string" then
+		ThrowError("Error MultiplierManager:ApplyMultiplier : Argument #3 isn't a string")
 		return 0
 	end
-	local MultType, IsBaseStats = CheckString(MultType)
+	local StatType, IsBaseStats = CheckString(StatType)
 
 	if IsBaseStats > 0 then
 		IsBaseStats = true
 	end
 
 
-	if MultType == "TEARS" then
-		return AddStat * MultiplierManager:GetTearsMultiplier(player, IsBaseStats)
-	elseif MultType == "DAMAGE" then
-		return AddStat * MultiplierManager:GetDamageMultiplier(player, IsBaseStats)
-	elseif MultType == "SPEED" then
-		return AddStat * MultiplierManager:GetSpeedMultiplier(player, IsBaseStats)
-	elseif MultType == "RANGE" then
-		return AddStat * MultiplierManager:GetRangeMultiplier(player, IsBaseStats)
-	elseif MultType == "SHOTSPEED" then
-		return AddStat * MultiplierManager:GetShotSpeedMultiplier(player, IsBaseStats)
-	elseif MultType == "LUCK" then
-		return AddStat * MultiplierManager:GetLuckMultiplier(player, IsBaseStats)
+	if StatType == "TEARS" then
+		return AddStat * MultiplierManager:GetPlayerTears(player, IsBaseStats)
+	elseif StatType == "DAMAGE" then
+		return AddStat * MultiplierManager:GetPlayerDamage(player, IsBaseStats)
+	elseif StatType == "SPEED" then
+		return AddStat * MultiplierManager:GetPlayerSpeed(player, IsBaseStats)
+	elseif StatType == "RANGE" then
+		return AddStat * MultiplierManager:GetPlayerRange(player, IsBaseStats)
+	elseif StatType == "SHOTSPEED" then
+		return AddStat * MultiplierManager:GetPlayerShotSpeed(player, IsBaseStats)
+	elseif StatType == "LUCK" then
+		return AddStat * MultiplierManager:GetPlayerLuck(player, IsBaseStats)
 	end
 
-	ThrowError("Error MultiplierManager:ApplyMultipliers : Argument #3 is an unknown value")
+	ThrowError("Error MultiplierManager:ApplyMultiplier : Argument #3 is an unknown value")
 	return 0
 end
+function MultiplierManager:ApplyMultipliers(AddStat, player, StatType) return MultiplierManager:ApplyMultiplier(AddStat, player, StatType) end -- old name to not cause errors

@@ -4,10 +4,10 @@
 
 All the functions can be access with the global "MultiplierManager"
 
-## RegisterItemMultipliers
+## RegisterItem
 
 ```lua
-function MultiplierManager:RegisterItemMultipliers(CollectibleType : Int, Multipliers : table)
+function MultiplierManager:RegisterItem(CollectibleType : Int, Multipliers : table)
 ```
 
 - ` CollectibleType` : Integer - Item ID
@@ -40,16 +40,16 @@ function YourMod:RangeMult(player)
     return 0.6
 end
 
-MultiplierManager:RegisterItemMultipliers(CustomItemId, {
+MultiplierManager:RegisterItem(CustomItemId, {
     Damage = 1.5,
     Range = YourMod.RangeMult
 })
 ```
 
-## RegisterTrinketMultipliers
+## RegisterTrinket
 
 ```lua
-function MultiplierManager:RegisterTrinketMultipliers(TrinketType : Int, Multipliers : table)
+function MultiplierManager:RegisterTrinket(TrinketType : Int, Multipliers : table)
 ```
 
 - `TrinketType` : Integer - Trinket ID
@@ -76,19 +76,19 @@ local CustomTrinketId = Isaac.GetTrinketIdByName("CustomTrinket")
 
 function YourMod:TearsMult(player)
     -- if the player gives a x1.05 tear multiplier
-    return 1 + player:GetTrinketMultiplier(CustomTrinketId) * 0.05
+    return 1 + player:GetTrinket(CustomTrinketId) * 0.05
 end
 
-MultiplierManager:RegisterTrinketMultipliers(CustomTrinketId, {
+MultiplierManager:RegisterTrinket(CustomTrinketId, {
     Tears = YourMod.TearsMult,
     ShotSpeed = 0.8
 })
 ```
 
-## RegisterPlayerMultipliers
+## RegisterPlayer
 
 ```lua
-function MultiplierManager:RegisterPlayerMultipliers(PlayerType : Int, Multipliers : table)
+function MultiplierManager:RegisterPlayer(PlayerType : Int, Multipliers : table)
 ```
 
 - `PlayerType` : Integer - Player ID
@@ -121,7 +121,7 @@ function YourMod:TearsMult(player)
     return 0.9
 end
 
-MultiplierManager:RegisterPlayerMultipliers(CustomCharacterId, {
+MultiplierManager:RegisterPlayer(CustomCharacterId, {
     Damage = 1.3, 
     Tears = YourMod.TearsMult
 })
@@ -129,10 +129,10 @@ MultiplierManager:RegisterPlayerMultipliers(CustomCharacterId, {
 
 ----
 
-## GetItemMultipliers
+## GetItem
 
 ```lua
-function MultiplierManager:GetItemMultipliers(CollectibleType : Int)
+function MultiplierManager:GetItem(CollectibleType : Int)
 ```
 
 - `CollectibleType` : Integer - Item ID
@@ -158,7 +158,7 @@ local Mod = RegisterMod("YourMod", 1)
 
 function Mod:DoCache(player, cacheflag)
     -- prints all Heamolacria multipliers
-    for StatType, Multiplier in pairs(MultiplierManager:GetItemMultipliers(CollectibleType.COLLECTIBLE_HAEMOLACRIA)) do
+    for StatType, Multiplier in pairs(MultiplierManager:GetItem(CollectibleType.COLLECTIBLE_HAEMOLACRIA)) do
         local printMult = 0
         if type(Multiplier) == "function" then
             printMult = Multiplier(_, player)
@@ -171,10 +171,10 @@ end
 Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 ```
 
-## GetTrinketMultipliers
+## GetTrinket
 
 ```lua
-function MultiplierManager:GetTrinketMultipliers(TrinketType : Int)
+function MultiplierManager:GetTrinket(TrinketType : Int)
 ```
 
 - `TrinketType` : Integer - Trinket ID
@@ -200,7 +200,7 @@ local Mod = RegisterMod("YourMod", 1)
 
 function Mod:DoCache(player, cacheflag)
     -- prints all Cracked Crown multipliers
-    for StatType, Multiplier in pairs(MultiplierManager:GetTrinketMultipliers(TrinektType.TRINKET_CRACKED_CROWN)) do
+    for StatType, Multiplier in pairs(MultiplierManager:GetTrinket(TrinektType.TRINKET_CRACKED_CROWN)) do
         local printMult = 0
         if type(Multiplier) == "function" then
             printMult = Multiplier(_, player)
@@ -213,10 +213,10 @@ end
 Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 ```
 
-## GetPlayerMultipliers
+## GetPlayer
 
 ```lua
-function MultiplierManager:GetPlayerMultipliers(PlayerType : Int)
+function MultiplierManager:GetPlayer(PlayerType : Int)
 ```
 
 - `PlayerType` : Integer - Player ID
@@ -243,7 +243,7 @@ local Mod = RegisterMod("YourMod", 1)
 function Mod:DoCache(player, cacheflag)
     if player:GetPlayerType() ~= PlayerType.PLAYER_ISAAC then return end
     -- prints isaac damage multiplier
-    print(MultiplierManager:GetPlayerMultipliers(PlayerType.PLAYER_ISAAC).Damage)
+    print(MultiplierManager:GetPlayer(PlayerType.PLAYER_ISAAC).Damage)
 end
 Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 ```
@@ -254,7 +254,7 @@ local Mod = RegisterMod("YourMod", 1)
 function Mod:DoCache(player, cacheflag)
     if player:GetPlayerType() ~= PlayerType.PLAYER_EVE_B then return end
     -- prints all tainted eves multipliers
-    for StatType, Multiplier in pairs(MultiplierManager:GetPlayerMultipliers(PlayerType.PLAYER_EVE_B)) do
+    for StatType, Multiplier in pairs(MultiplierManager:GetPlayer(PlayerType.PLAYER_EVE_B)) do
         local printMult = 0
         if type(Multiplier) == "function" then
             printMult = Multiplier(_, player)
@@ -267,10 +267,10 @@ end
 Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 ```
 
-## GetCrackedCrownMultiplier
+## GetCrackedCrown
 
 ```lua
-function MultiplierManager:GetCrackedCrownMultiplier(EntityPlayer : userdata)
+function MultiplierManager:GetCrackedCrown(EntityPlayer : userdata)
 ```
 
 - `EntityPlayer` : userdata
@@ -284,15 +284,15 @@ local Mod = RegisterMod("YourMod", 1)
 
 function Mod:DoChache(player, cacheflag)
     -- print the player Cracked Crown multiplier
-    print(MultiplierManager:GetCrackedCrownMultiplier(player))
+    print(MultiplierManager:GetCrackedCrown(player))
 end
 Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 ```
 
-## GetDamageMultiplier
+## GetPlayerDamage
 
 ```lua
-function MultiplierManager:GetDamageMultiplier(EntityPlayer : userdata, IsBaseStats : boolean)
+function MultiplierManager:GetPlayerDamage(EntityPlayer : userdata, IsBaseStats : boolean)
 ```
 
 - `EntityPlayer` : userdata
@@ -308,17 +308,17 @@ local Mod = RegisterMod("YourMod", 1)
 
 function Mod:DoChache(player, cacheflag)
     -- prints the player total damage multiplier
-    print(MultiplierManager:GetDamageMultiplier(player))
+    print(MultiplierManager:GetPlayerDamage(player))
     -- prints the player total damage multiplier without the Cracked Crown multiplier
-    print(MultiplierManager:GetDamageMultiplier(player, true))
+    print(MultiplierManager:GetPlayerDamage(player, true))
 end
 Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 ```
 
-## GetTearsMultiplier
+## GetPlayerTears
 
 ```lua
-function MultiplierManager:GetTearsMultiplier(EntityPlayer : userdata, IsBaseStats : boolean)
+function MultiplierManager:GetPlayerTears(EntityPlayer : userdata, IsBaseStats : boolean)
 ```
 
 - `EntityPlayer` : userdata
@@ -334,17 +334,17 @@ local Mod = RegisterMod("YourMod", 1)
 
 function Mod:DoCache(player, cacheflag)
     -- prints the player total tear multiplier
-    print(MultiplierManager:GetTearsMultiplier(player))
+    print(MultiplierManager:GetPlayerTears(player))
     -- prints the player total tear multiplier without the Cracked Crown multiplier
-    print(MultiplierManager:GetTearsMultiplier(player, true))
+    print(MultiplierManager:GetPlayerTears(player, true))
 end
 Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 ```
 
-## GetSpeedMultiplier
+## GetPlayerSpeed
 
 ```lua
-function MultiplierManager:GetSpeedMultiplier(EntityPlayer : userdata, IsBaseStats : boolean)
+function MultiplierManager:GetPlayerSpeed(EntityPlayer : userdata, IsBaseStats : boolean)
 ```
 
 - `EntityPlayer` : userdata
@@ -360,17 +360,17 @@ local Mod = RegisterMod("YourMod", 1)
 
 function Mod:DoCache(player, cacheflag)
     -- prints the player total speed multiplier
-    print(MultiplierManager:GetSpeedMultiplier(player))
+    print(MultiplierManager:GetPlayerSpeed(player))
     -- prints the player total speed multiplier without the Cracked Crown multiplier
-    print(MultiplierManager:GetSpeedMultiplier(player, true))
+    print(MultiplierManager:GetPlayerSpeed(player, true))
 end
 Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 ```
 
-## GetRangeMultiplier
+## GetPlayerRange
 
 ```lua
-function MultiplierManager:GetRangeMultiplier(EntityPlayer : userdata, IsBaseStats : boolean)
+function MultiplierManager:GetPlayerRange(EntityPlayer : userdata, IsBaseStats : boolean)
 ```
 
 - `EntityPlayer` : userdata
@@ -386,17 +386,17 @@ local Mod = RegisterMod("YourMod", 1)
 
 function Mod:DoCache(player, cacheflag)
     -- prints the player total range multiplier
-    print(MultiplierManager:GetRangeMultiplier(player))
+    print(MultiplierManager:GetPlayerRange(player))
     -- prints the player total range multiplier without the Cracked Crown multiplier
-    print(MultiplierManager:GetRangeMultiplier(player, true))
+    print(MultiplierManager:GetPlayerRange(player, true))
 end
 Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 ```
 
-## GetShotSpeedMultiplier
+## GetPlayerShotSpeed
 
 ```lua
-function MultiplierManager:GetShotSpeedMultiplier(EntityPlayer : userdata, IsBaseStats : boolean)
+function MultiplierManager:GetPlayerShotSpeed(EntityPlayer : userdata, IsBaseStats : boolean)
 ```
 
 - `EntityPlayer` : userdata
@@ -412,17 +412,17 @@ local Mod = RegisterMod("YourMod", 1)
 
 function Mod:DoCache(player, cacheflag)
     -- prints the player total shotspeed multiplier
-    print(MultiplierManager:GetShotSpeedMultiplier(player))
+    print(MultiplierManager:GetPlayerShotSpeed(player))
     -- prints the player total shotspeed multiplier without the Cracked Crown multiplier
-    print(MultiplierManager:GetShotSpeedMultiplier(player, true))
+    print(MultiplierManager:GetPlayerShotSpeed(player, true))
 end
 Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 ```
 
-## GetLuckMultiplier
+## GetPlayerLuck
 
 ```lua
-function MultiplierManager:GetLuckMultiplier(EntityPlayer : userdata, IsBaseStats : boolean)
+function MultiplierManager:GetPlayerLuck(EntityPlayer : userdata, IsBaseStats : boolean)
 ```
 
 - `EntityPlayer` : userdata
@@ -440,17 +440,17 @@ local Mod = RegisterMod("YourMod", 1)
 
 function Mod:DoCache(player, cacheflag)
     -- print the player luck multiplier
-    print(MultiplierManager:GetLuckMultiplier(player))
+    print(MultiplierManager:GetPlayerLuck(player))
 end
 Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 ```
 
 ---
 
-## ApplyMultipliers
+## ApplyMultiplier
 
 ```lua
-function MultiplierManager:ApplyMultipliers(AddStat : float, EntityPlayer : userdata, MultiplierType : string)
+function MultiplierManager:ApplyMultiplier(AddStat : float, EntityPlayer : userdata, MultiplierType : string)
 ```
 
 - `AddStat` : Float - Stat that will be added and multiplied to the player stat
@@ -469,10 +469,10 @@ local Mod = RegisterMod("YourMod", 1)
 function Mod:DoCache(player, cacheflag)
     if (cacheflag & CacheFlag.CACHE_DAMAGE) == CacheFlag.CACHE_DAMAGE then
         -- Removes 0.5 of damage and it wont be affected by Cracked Crown
-        player.Damage = player.Damage - MultiplierManager:ApplyMultipliers(0.5, player, "BaseDamage" )
+        player.Damage = player.Damage - MultiplierManager:ApplyMultiplier(0.5, player, "BaseDamage" )
     elseif (cacheflag & CacheFlag.CACHE_LUCK) == CacheFlag.CACHE_LUCK then
         -- Adds 1 of luck. Cracked Crown by default doesn't affect the luck stat, but you can add the "Base" if you want
-        player.Luck = player.Luck + MultiplierManager:ApplyMultipliers(1, player, "Luck")
+        player.Luck = player.Luck + MultiplierManager:ApplyMultiplier(1, player, "Luck")
     end
 end
 Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
@@ -489,13 +489,13 @@ function Mod:DoCache(player, cacheflag)
     if (cacheflag & CacheFlag.CACHE_FIREDELAY) == CacheFlag.CACHE_FIREDELAY then
         local tears = 30.0 / (player.MaxFireDelay + 1)
         -- Add 0.2 and Multiplies by the number of the same item and then applys the items multipliers
-        player.MaxFireDelay = 30 / (tears + MultiplierManager:ApplyMultipliers(0.2 * ItemNum, player, "Tears") ) - 1
+        player.MaxFireDelay = 30 / (tears + MultiplierManager:ApplyMultiplier(0.2 * ItemNum, player, "Tears") ) - 1
     elseif (cacheflag & CacheFlag.CACHE_SHOTSPEED) == CacheFlag.CACHE_SHOTSPEED then
         -- Add 0.1 and Multiplies by the number of the same item and then applys the items multipliers
-        player.ShotSpeed = player.ShotSpeed + MultiplierManager:ApplyMultipliers(0.1 * ItemNum, player, "ShotSpeed")
+        player.ShotSpeed = player.ShotSpeed + MultiplierManager:ApplyMultiplier(0.1 * ItemNum, player, "ShotSpeed")
     elseif (cacheflag & CacheFlag.CACHE_DAMAGE) == CacheFlag.CACHE_DAMAGE then
         -- Add 1.5 and Multiplies by the number of the same item and then applys the items multipliers
-        player.Damage = player.Damage + MultiplierManager:ApplyMultipliers(1.5 * ItemNum, player, "Damage")
+        player.Damage = player.Damage + MultiplierManager:ApplyMultiplier(1.5 * ItemNum, player, "Damage")
     end
     -- Because this stats aren't mark as "base" stats can be affected by Cracked Crown
 end
@@ -504,24 +504,24 @@ Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 
 ---
 
-## AddMultiplierCondition
+## AddMiscMultiplier
 
 ```lua
-function MultiplierManager:AddMultiplierCondition(StatType : string, ConditionName : string, Condition : function(_, player : userdata, IsBaseStat : bool) or bool,  Result : function(_, player : userdata, IsBaseStat : bool) or float)
+function MultiplierManager:AddMiscMultiplier(StatType : string, MultName : string, Condition : function(_, player : userdata, IsBaseStat : bool) or bool,  Mult : function(_, player : userdata, IsBaseStat : bool) or float)
 ```
 
 - `StatType` : String - Stat type (damage, tears, range, etc)
 
-- `ConditionName` : String - Name of the condition
+- `MultName` : String - Name of the condition
 
 - `Condition` : Function or Bool - Returns '**True**' or '**False**' if the condition is met. You can set it as '**True**' to be allway be execute
 
-- `Result` : function or float - Returns the multiplier to apply
+- `Mult` : function or float - Returns the multiplier to apply
 
 ### Example
 
 ```lua
-function MultiplierManager:AddMultiplierCondition(
+function MultiplierManager:AddMiscMultiplier(
     "Damage", -- stat type
     "Pentagram multiplier", -- name of the condition
     function(_, player) -- condition
@@ -533,7 +533,7 @@ function MultiplierManager:AddMultiplierCondition(
 )
 
 
-function MultiplierManager:AddMultiplierCondition(
+function MultiplierManager:AddMiscMultiplier(
     "Tears", -- stat type
     "Cry Onion multiplier", -- name of the condition
     true, -- is allways gives a result
@@ -545,23 +545,21 @@ function MultiplierManager:AddMultiplierCondition(
 )
 ```
 
-## GetMultiplierCondition
+## GetMiscMultiplier
 
 ```lua
-function MultiplierManager:GetMultiplierCondition(StatType : string, ConditionName : string)
+function MultiplierManager:GetMiscMultiplier(StatType : string, MultName : string)
 ```
 
 - `StatType` : String - Stat type (damage, tears, range, etc)
 
-- `ConditionName` : String - Name of the condition
+- `MultName` : String - Name of the condition
 
 - `Return` : Table -
   
   - `Condition` - Function(_, player : userdata, IsBaseStat : Bool) [return : Bool] or Bool
   
-  - `Result` - Function(_, player : userdata, IsBaseStat : Bool) [return : Float] or Float
-
-    
+  - `Mult` - Function(_, player : userdata, IsBaseStat : Bool) [return : Float] or Float
 
 ---
 
