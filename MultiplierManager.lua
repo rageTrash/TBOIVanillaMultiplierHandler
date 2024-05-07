@@ -1,9 +1,62 @@
-local VERSION = 2
+local VERSION = 2.5
 MultiplierManager = MultiplierManager or {}
 
 if MultiplierManager and MultiplierManager.Version and VERSION <= MultiplierManager.Version then return end
 
 MultiplierManager.Version = VERSION
+
+
+local LiquidPoopEffect = {
+	NONE = 0,
+	NORMAL = 1<<0,
+	STONE = 1<<1,
+	CORNY = 1<<2,
+	BURNING = 1<<3,
+	STINKY = 1<<4,
+	BLACK = 1<<5,
+	HOLY = 1<<6,
+}
+
+local StatsGenericMin = {
+	DAMAGE = 3.5,
+	TEARS = 2.73,
+	SPEED = 1,
+	RANGE = 6.5,
+	SHOTSPEED = 1,
+	LUCK = 0
+}
+
+
+local function CheckString(str)
+	local str = string.gsub(string.gsub(string.upper(str), "[%_, %-, % ]", ""), "BASE", "")
+	local sameNameTable = {
+		["DMG"] = "DAMAGE",
+		["TEAR"] = "TEARS",
+		["MOVESPEED"] = "SPEED",
+		["MOVEMENT"] = "SPEED",
+		["TEARRANGE"] = "RANGE",
+		["TEARSPEED"] = "SHOTSPEED",
+		["TEARVELOCITY"] = "SHOTSPEED",
+	}
+	if sameNameTable[str] then
+		return sameNameTable[str]
+	end
+	return str
+end
+
+local function ThrowError(str)
+	local str = tostring(str)
+	error(str, 2)
+end
+
+local function GetPlayerIndex(playerPtr)
+	if playerPtr:GetPlayerType() == PlayerType.PLAYER_THESOUL_B and playerPtr:GetMainTwin() ~= nil then
+		playerPtr = playerPtr:GetMainTwin()
+	end
+	return tostring(GetPtrHash(playerPtr))
+end
+
+
 
 MultiplierManager.PlayerMult = {
 	[PlayerType.PLAYER_CAIN] 			= {Damage = 1.2},
@@ -175,37 +228,44 @@ MultiplierManager.ItemMult = {
 }
 
 
-MultiplierManager.TrinketMult = {
-	[TrinketType.TRINKET_CRACKED_CROWN] = {
-		Damage = MultiplierManager.GetCrackedCrownMultiplier,
-		Tears = MultiplierManager.GetCrackedCrownMultiplier,
-		Speed = MultiplierManager.GetCrackedCrownMultiplier,
-		Range = MultiplierManager.GetCrackedCrownMultiplier,
-		ShotSpeed = MultiplierManager.GetCrackedCrownMultiplier
-	}
-}
+MultiplierManager.TrinketMult = {}
 
+
+local function checkHolyAura(_, player)
+		for _, ent in pairs(Isaac.FindByType(EntityType.ENTITY_EFFECT, EffectVariant.CREEP_LIQUID_POOP)) do
+	        local effect = ent:ToEffect()
+	        if effect.State == 64 and player.Position:DistanceSquared(ent.Position) <= 380 then
+	            return true
+	        end
+	    end
+		for _, ent in pairs(Isaac.FindByType(1000, EffectVariant.HALLOWED_GROUND, -1, false, false)) do
+			if ent.Parent then
+				local parent = ent.Parent
+				if (parent.Type == EntityType.ENTITY_POOP and parent.Variant == 16) or (parent.Type == EntityType.ENTITY_FAMILIAR and parent.Variant == FamiliarVariant.STAR_OF_BETHLEHEM) then
+					if ent.Position:DistanceSquared(player.Position) <= 6400 then
+						return true
+					end
+				elseif (parent.Type == EntityType.ENTITY_FAMILIAR and parent.Variant == FamiliarVariant.DIP and parent.SubType == 6) then
+					if ent.Position:DistanceSquared(player.Position) <= 1000 then
+						return true
+					end
+				end
+			end
+		end
+		return false
+	end
 
 MultiplierManager.MiscMult = {
 	["DAMAGE"] = {
 		["D8 Mult"] = {
 			Condition = function() return (REPENTOGON and REPENTOGON["Real"]) end,
-			Mult = function(_, player)
-				return player:GetD8DamageModifier()
-			end
+			Mult = function(_, player) return player:GetD8DamageModifier() end
 		},
 		["Holy Aura"] = {
-			Condition = function(_, player)
-				for _, ent in pairs(Isaac.FindByType(1000, EffectVariant.HALLOWED_GROUND, -1, false, false)) do
-					if ent.Position:DistanceSquared(player.Position) <= 6800 then
-						return true
-					end
-				end
-				return false
-			end,
+			Condition = checkHolyAura,
 			Mult = function(_, player)
 				for _, ent in pairs(Isaac.FindByType(3, FamiliarVariant.STAR_OF_BETHLEHEM, -1, false, false)) do
-					if ent.Position:DistanceSquared(player.Position) <= 6800 then
+					if ent.Position:DistanceSquared(player.Position) <= 6400 then
 						return 1.8
 					end
 				end
@@ -216,71 +276,42 @@ MultiplierManager.MiscMult = {
 	["TEARS"] = {
 		["D8 Mult"] = {
 			Condition = function() return (REPENTOGON and REPENTOGON["Real"]) end,
+			Mult = function(_, player) return player:GetD8FireDelayModifier() end
+		},
+		["Epiphora Mult"] = {
+			Condition = function() return (REPENTOGON and REPENTOGON["Real"]) end,
 			Mult = function(_, player)
-				return player:GetD8FireDelayModifier()
+				local charge = player:GetEpiphoraCharge()
+			    if charge >= 270 then
+			        return 2
+			    elseif charge >= 180 then
+			        return 1.66
+			    elseif charge >= 90 then
+			        return 1.33
+			    end
+			    return 1
 			end
 		},
 		["Holy Aura"] = {
-			Condition = function(_, player)
-				for _, ent in pairs(Isaac.FindByType(1000, EffectVariant.HALLOWED_GROUND, -1, false, false)) do
-					if ent.Position:DistanceSquared(player.Position) <= 6800 then
-						return true
-					end
-				end
-				return false
-			end,
+			Condition = checkHolyAura,
 			Mult = 2.5
 		}
 	},
 	["SPEED"] = {
 		["D8 Mult"] = {
 			Condition = function() return (REPENTOGON and REPENTOGON["Real"]) end,
-			Mult = function(_, player)
-				return player:GetD8SpeedModifier()
-			end
+			Mult = function(_, player) return player:GetD8SpeedModifier() end
 		},
 	},
 	["RANGE"] = {
 		["D8 Mult"] = {
 			Condition = function() return (REPENTOGON and REPENTOGON["Real"]) end,
-			Mult = function(_, player)
-				return player:GetD8RangeModifier()
-			end
+			Mult = function(_, player) return player:GetD8RangeModifier() end
 		},
 	},
 	["SHOTSPEED"] = {},
 	["LUCK"] = {}
 }
-
-
-local function CheckString(str)
-	local str, base = string.gsub(string.gsub(string.upper(str), "[%_, %-, % ]", ""), "BASE", "")
-	local sameNameTable = {
-		["DMG"] = "DAMAGE",
-		["TEAR"] = "TEARS",
-		["MOVESPEED"] = "SPEED",
-		["MOVEMENT"] = "SPEED",
-		["TEARRANGE"] = "RANGE",
-		["TEARSPEED"] = "SHOTSPEED",
-		["TEARVELOCITY"] = "SHOTSPEED",
-	}
-	if sameNameTable[str] then
-		return sameNameTable[str], base
-	end
-	return str, base
-end
-
-local function ThrowError(str)
-	local str = tostring(str)
-	error(str, 2)
-end
-
-local function GetPlayerIndex(playerPtr)
-	if playerPtr:GetPlayerType() == PlayerType.PLAYER_THESOUL_B and playerPtr:GetMainTwin() ~= nil then
-		playerPtr = playerPtr:GetMainTwin()
-	end
-	return tostring(GetPtrHash(playerPtr))
-end
 
 --[[
 mult = {
@@ -371,6 +402,25 @@ end
 function MultiplierManager:GetCrackedCrownMultiplier(player) return MultiplierManager:GetCrackedCrown(player) end -- old name to not cause errors
 
 
+---@param player	- EntityPlayer (usedata)
+---@param StatType 	- string
+---@return bool
+function MultiplierManager:CanGiveCrackedCrowMult(player, StatType)
+	local StatType = CheckString(StatType)
+	if StatsGenericMin[StatType] and StatType ~= "LUCK" then
+		local PlayersStats = {
+			DAMAGE = player.Damage,
+			TEARS = player.MaxFireDelay,
+			SPEED = player.MoveSpeed,
+			RANGE = player.TearRange,
+			SHOTSPEED = player.ShotSpeed
+		}
+		return PlayersStats[StatType] > MultiplierManager:ApplyMultiplier(StatsGenericMin[StatType], player, StatType)
+	end
+	return false
+end
+
+
 
 ---@param MultName		- string
 ---@param Condition		- function(_, player, isBaseStats) [return : bool] / bool
@@ -416,16 +466,10 @@ end
 
 
 
-MultiplierManager.CacheMult = {}
-
 ---@param player		- EntityPlayer (usedata)
----@param IsBaseStats	- boolean - Default false
-function MultiplierManager:GetPlayerDamage(player, IsBaseStats)
-	local IsBaseStats = IsBaseStats or false
-
-	local pIndex = GetPlayerIndex(player)
-	local pCache = MultiplierManager.CacheMult[pIndex]
-	if pCache and pCache.Damage and pCache.Damage.Mult and (pCache.Damage.IsBaseStats and pCache.Damage.IsBaseStats == IsBaseStats) and (pCache.Damage.FrameCached and pCache.Damage.FrameCached == Game():GetFrameCount()) then
+function MultiplierManager:GetPlayerDamage(player)
+	local pCache = player:GetData().MultiplierManager_CacheEvaluation
+	if pCache and pCache.Damage and pCache.Damage.Mult and (pCache.Damage.FrameCached and pCache.Damage.FrameCached == Game():GetFrameCount()) then
 		return pCache.Damage.Mult
 	end
 
@@ -438,7 +482,7 @@ function MultiplierManager:GetPlayerDamage(player, IsBaseStats)
 		local addDamage = itemMult.Damage
 		if (player:HasCollectible(itemID) or player:GetEffects():HasCollectibleEffect(itemID)) and addDamage then
 			if type(addDamage) == "function" then
-				totalMult = totalMult * addDamage(_, player, IsBaseStats)
+				totalMult = totalMult * addDamage(_, player)
 			else
 				totalMult = totalMult * addDamage
 			end
@@ -449,43 +493,45 @@ function MultiplierManager:GetPlayerDamage(player, IsBaseStats)
 		local addDamage = trinketMult.Damage
 		if (player:HasTrinket(trinketID) or player:GetEffects():HasTrinketEffect(trinketID)) and addDamage then
 			if type(addDamage) == "function" then
-				totalMult = totalMult * addDamage(_, player, IsBaseStats)
-			else
-				totalMult = totalMult * addDamage
-			end
-		end
-	end
-	
-	for name, ConData in pairs(MultiplierManager.MiscMult.DAMAGE) do
-		local condition = ConData.Condition
-		local addDamage = ConData.Mult
-		if type(condition) == "function" then
-			condition = condition(_, player, IsBaseStats)
-		end
-		if condition then
-			if type(addDamage) == "function" then
-				totalMult = totalMult * addDamage(_, player, IsBaseStats)
+				totalMult = totalMult * addDamage(_, player)
 			else
 				totalMult = totalMult * addDamage
 			end
 		end
 	end
 
-	MultiplierManager.CacheMult[pIndex] = MultiplierManager.CacheMult[pIndex] or {}
-	MultiplierManager.CacheMult[pIndex].Damage = {Mult = totalMult, IsBaseStats = IsBaseStats, FrameCached = Game():GetFrameCount()}
+	for name, ConData in pairs(MultiplierManager.MiscMult.DAMAGE) do
+		local condition = ConData.Condition
+		local addDamage = ConData.Mult
+		if type(condition) == "function" then
+			condition = condition(_, player)
+		end
+		if condition then
+			if type(addDamage) == "function" then
+				totalMult = totalMult * addDamage(_, player)
+			else
+				totalMult = totalMult * addDamage
+			end
+		end
+	end
+
+	if (player:HasTrinket(TrinketType.TRINKET_CRACKED_CROWN) or player:GetEffects():HasTrinketEffect(TrinketType.TRINKET_CRACKED_CROWN)) then
+		if player.Damage > totalMult * StatsGenericMin.DAMAGE then
+			totalMult = totalMult * MultiplierManager:GetCrackedCrown(player)
+		end
+	end
+
+	player:GetData().MultiplierManager_CacheEvaluation = pCache or {}
+	player:GetData().MultiplierManager_CacheEvaluation.Damage = {Mult = totalMult, FrameCached = Game():GetFrameCount()}
 	return totalMult
 end
 function MultiplierManager:GetDamageMultiplier(player, IsBaseStats) return MultiplierManager:GetPlayerDamage(player, IsBaseStats) end -- old name to not cause errors
 
 
 ---@param player		- EntityPlayer (usedata)
----@param IsBaseStats	- boolean - Default false
-function MultiplierManager:GetPlayerTears(player, IsBaseStats)
-	local IsBaseStats = IsBaseStats or false
-
-	local pIndex = GetPlayerIndex(player)
-	local pCache = MultiplierManager.CacheMult[pIndex]
-	if pCache and pCache.Tears and pCache.Tears.Mult and (pCache.Tears.IsBaseStats and pCache.Tears.IsBaseStats == IsBaseStats) and (pCache.Tears.FrameCached and pCache.Tears.FrameCached == Game():GetFrameCount()) then
+function MultiplierManager:GetPlayerTears(player)
+	local pCache = player:GetData().MultiplierManager_CacheEvaluation
+	if pCache and pCache.Tears and pCache.Tears.Mult and (pCache.Tears.FrameCached and pCache.Tears.FrameCached == Game():GetFrameCount()) then
 		return pCache.Tears.Mult
 	end
 
@@ -498,7 +544,7 @@ function MultiplierManager:GetPlayerTears(player, IsBaseStats)
 		local addTears = itemMult.Tears
 		if (player:HasCollectible(itemID) or player:GetEffects():HasCollectibleEffect(itemID)) and addTears then
 			if type(addTears) == "function" then
-				totalMult = totalMult * addTears(_, player, IsBaseStats)
+				totalMult = totalMult * addTears(_, player)
 			else
 				totalMult = totalMult * addTears
 			end
@@ -509,7 +555,7 @@ function MultiplierManager:GetPlayerTears(player, IsBaseStats)
 		local addTears = trinketMult.Tears
 		if (player:HasTrinket(trinketID) or player:GetEffects():HasTrinketEffect(trinketID)) and addTears then
 			if type(addTears) == "function" then
-				totalMult = totalMult * addTears(_, player, IsBaseStats)
+				totalMult = totalMult * addTears(_, player)
 			else
 				totalMult = totalMult * addTears
 			end
@@ -520,32 +566,34 @@ function MultiplierManager:GetPlayerTears(player, IsBaseStats)
 		local condition = ConData.Condition
 		local addTears = ConData.Mult
 		if type(condition) == "function" then
-			condition = condition(_, player, IsBaseStats)
+			condition = condition(_, player)
 		end
 		if condition then
 			if type(addTears) == "function" then
-				totalMult = totalMult * addTears(_, player, IsBaseStats)
+				totalMult = totalMult * addTears(_, player)
 			else
 				totalMult = totalMult * addTears
 			end
 		end
 	end
 
-	MultiplierManager.CacheMult[pIndex] = MultiplierManager.CacheMult[pIndex] or {}
-	MultiplierManager.CacheMult[pIndex].Tears = {Mult = totalMult, IsBaseStats = IsBaseStats, FrameCached = Game():GetFrameCount()}
+	if (player:HasTrinket(TrinketType.TRINKET_CRACKED_CROWN) or player:GetEffects():HasTrinketEffect(TrinketType.TRINKET_CRACKED_CROWN)) then
+		if player.MaxFireDelay > totalMult * StatsGenericMin.TEARS then
+			totalMult = totalMult * MultiplierManager:GetCrackedCrown(player)
+		end
+	end
+
+	player:GetData().MultiplierManager_CacheEvaluation = pCache or {}
+	player:GetData().MultiplierManager_CacheEvaluation.Tears = {Mult = totalMult, FrameCached = Game():GetFrameCount()}
 	return totalMult
 end
 function MultiplierManager:GetTearsMultiplier(player, IsBaseStats) return MultiplierManager:GetPlayerTears(player, IsBaseStats) end -- old name to not cause errors
 
 
 ---@param player		- EntityPlayer (usedata)
----@param IsBaseStats	- boolean - Default false
-function MultiplierManager:GetPlayerSpeed(player, IsBaseStats)
-	local IsBaseStats = IsBaseStats or false
-
-	local pIndex = GetPlayerIndex(player)
-	local pCache = MultiplierManager.CacheMult[pIndex]
-	if pCache and pCache.Speed and pCache.Speed.Mult and (pCache.Speed.IsBaseStats and pCache.Speed.IsBaseStats == IsBaseStats) and (pCache.Speed.FrameCached and pCache.Speed.FrameCached == Game():GetFrameCount()) then
+function MultiplierManager:GetPlayerSpeed(player)
+	local pCache = player:GetData().MultiplierManager_CacheEvaluation
+	if pCache and pCache.Speed and pCache.Speed.Mult and (pCache.Speed.FrameCached and pCache.Speed.FrameCached == Game():GetFrameCount()) then
 		return pCache.Speed.Mult
 	end
 
@@ -558,7 +606,7 @@ function MultiplierManager:GetPlayerSpeed(player, IsBaseStats)
 		local addSpeed = itemMult.Speed
 		if (player:HasCollectible(itemID) or player:GetEffects():HasCollectibleEffect(itemID)) and addSpeed then
 			if type(addSpeed) == "function" then
-				totalMult = totalMult * addSpeed(_, player, IsBaseStats)
+				totalMult = totalMult * addSpeed(_, player)
 			else
 				totalMult = totalMult * addSpeed
 			end
@@ -569,7 +617,7 @@ function MultiplierManager:GetPlayerSpeed(player, IsBaseStats)
 		local addSpeed = trinketMult.Speed
 		if (player:HasTrinket(trinketID) or player:GetEffects():HasTrinketEffect(trinketID)) and addSpeed then
 			if type(addSpeed) == "function" then
-				totalMult = totalMult * addSpeed(_, player, IsBaseStats)
+				totalMult = totalMult * addSpeed(_, player)
 			else
 				totalMult = totalMult * addSpeed
 			end
@@ -580,32 +628,34 @@ function MultiplierManager:GetPlayerSpeed(player, IsBaseStats)
 		local condition = ConData.Condition
 		local addSpeed = ConData.Mult
 		if type(condition) == "function" then
-			condition = condition(_, player, IsBaseStats)
+			condition = condition(_, player)
 		end
 		if condition then
 			if type(addSpeed) == "function" then
-				totalMult = totalMult * addSpeed(_, player, IsBaseStats)
+				totalMult = totalMult * addSpeed(_, player)
 			else
 				totalMult = totalMult * addSpeed
 			end
 		end
 	end
 
-	MultiplierManager.CacheMult[pIndex] = MultiplierManager.CacheMult[pIndex] or {}
-	MultiplierManager.CacheMult[pIndex].Speed = {Mult = totalMult, IsBaseStats = IsBaseStats, FrameCached = Game():GetFrameCount()}
+	if (player:HasTrinket(TrinketType.TRINKET_CRACKED_CROWN) or player:GetEffects():HasTrinketEffect(TrinketType.TRINKET_CRACKED_CROWN)) then
+		if player.MoveSpeed > totalMult * StatsGenericMin.SPEED then
+			totalMult = totalMult * MultiplierManager:GetCrackedCrown(player)
+		end
+	end
+
+	player:GetData().MultiplierManager_CacheEvaluation = pCache or {}
+	player:GetData().MultiplierManager_CacheEvaluation.Speed = {Mult = totalMult, FrameCached = Game():GetFrameCount()}
 	return totalMult
 end
 function MultiplierManager:GetSpeedMultiplier(player, IsBaseStats) return MultiplierManager:GetPlayerSpeed(player, IsBaseStats) end -- old name to not cause errors
 
 
 ---@param player		- EntityPlayer (usedata)
----@param IsBaseStats	- boolean - Default false
-function MultiplierManager:GetPlayerRange(player, IsBaseStats)
-	local IsBaseStats = IsBaseStats or false
-
-	local pIndex = GetPlayerIndex(player)
-	local pCache = MultiplierManager.CacheMult[pIndex]
-	if pCache and pCache.Range and pCache.Range.Mult and (pCache.Range.IsBaseStats and pCache.Range.IsBaseStats == IsBaseStats) and (pCache.Range.FrameCached and pCache.Range.FrameCached == Game():GetFrameCount()) then
+function MultiplierManager:GetPlayerRange(player)
+	local pCache = player:GetData().MultiplierManager_CacheEvaluation
+	if pCache and pCache.Range and pCache.Range.Mult and (pCache.Range.FrameCached and pCache.Range.FrameCached == Game():GetFrameCount()) then
 		return pCache.Range.Mult
 	end
 
@@ -618,7 +668,7 @@ function MultiplierManager:GetPlayerRange(player, IsBaseStats)
 		local addRange = itemMult.Range
 		if (player:HasCollectible(itemID) or player:GetEffects():HasCollectibleEffect(itemID)) and addRange then
 			if type(addRange) == "function" then
-				totalMult = totalMult * addRange(_, player, IsBaseStats)
+				totalMult = totalMult * addRange(_, player)
 			else
 				totalMult = totalMult * addRange
 			end
@@ -629,7 +679,7 @@ function MultiplierManager:GetPlayerRange(player, IsBaseStats)
 		local addRange = trinketMult.Range
 		if (player:HasTrinket(trinketID) or player:GetEffects():HasTrinketEffect(trinketID)) and addRange then
 			if type(addRange) == "function" then
-				totalMult = totalMult * addRange(_, player, IsBaseStats)
+				totalMult = totalMult * addRange(_, player)
 			else
 				totalMult = totalMult * addRange
 			end
@@ -640,32 +690,34 @@ function MultiplierManager:GetPlayerRange(player, IsBaseStats)
 		local condition = ConData.Condition
 		local addRange = ConData.Mult
 		if type(condition) == "function" then
-			condition = condition(_, player, IsBaseStats)
+			condition = condition(_, player)
 		end
 		if condition then
 			if type(addRange) == "function" then
-				totalMult = totalMult * addRange(_, player, IsBaseStats)
+				totalMult = totalMult * addRange(_, player)
 			else
 				totalMult = totalMult * addRange
 			end
 		end
 	end
 
-	MultiplierManager.CacheMult[pIndex] = MultiplierManager.CacheMult[pIndex] or {}
-	MultiplierManager.CacheMult[pIndex].Range = {Mult = totalMult, IsBaseStats = IsBaseStats, FrameCached = Game():GetFrameCount()}
+	if (player:HasTrinket(TrinketType.TRINKET_CRACKED_CROWN) or player:GetEffects():HasTrinketEffect(TrinketType.TRINKET_CRACKED_CROWN)) then
+		if player.TearRange > totalMult * StatsGenericMin.RANGE then
+			totalMult = totalMult * MultiplierManager:GetCrackedCrown(player)
+		end
+	end
+
+	player:GetData().MultiplierManager_CacheEvaluation = pCache or {}
+	player:GetData().MultiplierManager_CacheEvaluation.Range = {Mult = totalMult, FrameCached = Game():GetFrameCount()}
 	return totalMult
 end
 function MultiplierManager:GetRangeMultiplier(player, IsBaseStats) return MultiplierManager:GetPlayerRange(player, IsBaseStats) end -- old name to not cause errors
 
 
 ---@param player		- EntityPlayer (usedata)
----@param IsBaseStats	- boolean - Default false
-function MultiplierManager:GetPlayerShotSpeed(player, IsBaseStats)
-	local IsBaseStats = IsBaseStats or false
-
-	local pIndex = GetPlayerIndex(player)
-	local pCache = MultiplierManager.CacheMult[pIndex]
-	if pCache and pCache.ShotSpeed and pCache.ShotSpeed.Mult and (pCache.ShotSpeed.IsBaseStats and pCache.ShotSpeed.IsBaseStats == IsBaseStats) and (pCache.ShotSpeed.FrameCached and pCache.ShotSpeed.FrameCached == Game():GetFrameCount()) then
+function MultiplierManager:GetPlayerShotSpeed(player)
+	local pCache = player:GetData().MultiplierManager_CacheEvaluation
+	if pCache and pCache.ShotSpeed and pCache.ShotSpeed.Mult and (pCache.ShotSpeed.FrameCached and pCache.ShotSpeed.FrameCached == Game():GetFrameCount()) then
 		return pCache.ShotSpeed.Mult
 	end
 
@@ -678,7 +730,7 @@ function MultiplierManager:GetPlayerShotSpeed(player, IsBaseStats)
 		local addShotSpeed = itemMult.ShotSpeed
 		if (player:HasCollectible(itemID) or player:GetEffects():HasCollectibleEffect(itemID)) and addShotSpeed then
 			if type(addShotSpeed) == "function" then
-				totalMult = totalMult * addShotSpeed(_, player, IsBaseStats)
+				totalMult = totalMult * addShotSpeed(_, player)
 			else
 				totalMult = totalMult * addShotSpeed
 			end
@@ -689,7 +741,7 @@ function MultiplierManager:GetPlayerShotSpeed(player, IsBaseStats)
 		local addShotSpeed = trinketMult.ShotSpeed
 		if (player:HasTrinket(trinketID) or player:GetEffects():HasTrinketEffect(trinketID)) and addShotSpeed then
 			if type(addShotSpeed) == "function" then
-				totalMult = totalMult * addShotSpeed(_, player, IsBaseStats)
+				totalMult = totalMult * addShotSpeed(_, player)
 			else
 				totalMult = totalMult * addShotSpeed
 			end
@@ -700,32 +752,34 @@ function MultiplierManager:GetPlayerShotSpeed(player, IsBaseStats)
 		local condition = ConData.Condition
 		local addShotSpeed = ConData.Mult
 		if type(condition) == "function" then
-			condition = condition(_, player, IsBaseStats)
+			condition = condition(_, player)
 		end
 		if condition then
 			if type(addShotSpeed) == "function" then
-				totalMult = totalMult * addShotSpeed(_, player, IsBaseStats)
+				totalMult = totalMult * addShotSpeed(_, player)
 			else
 				totalMult = totalMult * addShotSpeed
 			end
 		end
 	end
 
-	MultiplierManager.CacheMult[pIndex] = MultiplierManager.CacheMult[pIndex] or {}
-	MultiplierManager.CacheMult[pIndex].ShotSpeed = {Mult = totalMult, IsBaseStats = IsBaseStats, FrameCached = Game():GetFrameCount()}
+	if (player:HasTrinket(TrinketType.TRINKET_CRACKED_CROWN) or player:GetEffects():HasTrinketEffect(TrinketType.TRINKET_CRACKED_CROWN)) then
+		if player.ShotSpeed > totalMult * StatsGenericMin.SHOTSPEED then
+			totalMult = totalMult * MultiplierManager:GetCrackedCrown(player)
+		end
+	end
+
+	player:GetData().MultiplierManager_CacheEvaluation = pCache or {}
+	player:GetData().MultiplierManager_CacheEvaluation.ShotSpeed = {Mult = totalMult, FrameCached = Game():GetFrameCount()}
 	return totalMult
 end
 function MultiplierManager:GetShotSpeedMultiplier(player, IsBaseStats) return MultiplierManager:GetPlayerShotSpeed(player, IsBaseStats) end -- old name to not cause errors
 
 
 ---@param player		- EntityPlayer (usedata)
----@param IsBaseStats	- boolean - Default false
-function MultiplierManager:GetPlayerLuck(player, IsBaseStats)
-	local IsBaseStats = IsBaseStats or false
-
-	local pIndex = GetPlayerIndex(player)
-	local pCache = MultiplierManager.CacheMult[pIndex]
-	if pCache and pCache.Luck and pCache.Luck.Mult and (pCache.Luck.IsBaseStats and pCache.Luck.IsBaseStats == IsBaseStats) and (pCache.Luck.FrameCached and pCache.Luck.FrameCached == Game():GetFrameCount()) then
+function MultiplierManager:GetPlayerLuck(player)
+	local pCache = player:GetData().MultiplierManager_CacheEvaluation
+	if pCache and pCache.Luck and pCache.Luck.Mult and (pCache.Luck.FrameCached and pCache.Luck.FrameCached == Game():GetFrameCount()) then
 		return pCache.Luck.Mult
 	end
 
@@ -738,7 +792,7 @@ function MultiplierManager:GetPlayerLuck(player, IsBaseStats)
 		local addLuck = itemMult.Luck
 		if (player:HasCollectible(itemID) or player:GetEffects():HasCollectibleEffect(itemID)) and addLuck then
 			if type(addLuck) == "function" then
-				totalMult = totalMult * addLuck(_, player, IsBaseStats)
+				totalMult = totalMult * addLuck(_, player)
 			else
 				totalMult = totalMult * addLuck
 			end
@@ -749,7 +803,7 @@ function MultiplierManager:GetPlayerLuck(player, IsBaseStats)
 		local addLuck = trinketMult.Luck
 		if (player:HasTrinket(trinketID) or player:GetEffects():HasTrinketEffect(trinketID)) and addLuck then
 			if type(addLuck) == "function" then
-				totalMult = totalMult * addLuck(_, player, IsBaseStats)
+				totalMult = totalMult * addLuck(_, player)
 			else
 				totalMult = totalMult * addLuck
 			end
@@ -760,19 +814,19 @@ function MultiplierManager:GetPlayerLuck(player, IsBaseStats)
 		local condition = ConData.Condition
 		local addLuck = ConData.Mult
 		if type(condition) == "function" then
-			condition = condition(_, player, IsBaseStats)
+			condition = condition(_, player)
 		end
 		if condition then
 			if type(addLuck) == "function" then
-				totalMult = totalMult * addLuck(_, player, IsBaseStats)
+				totalMult = totalMult * addLuck(_, player)
 			else
 				totalMult = totalMult * addLuck
 			end
 		end
 	end
 
-	MultiplierManager.CacheMult[pIndex] = MultiplierManager.CacheMult[pIndex] or {}
-	MultiplierManager.CacheMult[pIndex].Luck = {Mult = totalMult, IsBaseStats = IsBaseStats, FrameCached = Game():GetFrameCount()}
+	player:GetData().MultiplierManager_CacheEvaluation = pCache or {}
+	player:GetData().MultiplierManager_CacheEvaluation.Luck = {Mult = totalMult, FrameCached = Game():GetFrameCount()}
 	return totalMult
 end
 function MultiplierManager:GetLuckMultiplier(player, IsBaseStats) return MultiplierManager:GetPlayerLuck(player, IsBaseStats) end -- old name to not cause errors
@@ -783,31 +837,26 @@ function MultiplierManager:GetLuckMultiplier(player, IsBaseStats) return Multipl
 ---@param StatType		- string
 function MultiplierManager:ApplyMultiplier(AddStat, player, StatType)
 	local AddStat = type(AddStat) == "number" and AddStat or 0
-	local IsBaseStats = false
 
 	if type(StatType) ~= "string" then
 		ThrowError("Error MultiplierManager:ApplyMultiplier : Argument #3 isn't a string")
 		return 0
 	end
-	local StatType, IsBaseStats = CheckString(StatType)
-
-	if IsBaseStats > 0 then
-		IsBaseStats = true
-	end
+	local StatType = CheckString(StatType)
 
 
 	if StatType == "TEARS" then
-		return AddStat * MultiplierManager:GetPlayerTears(player, IsBaseStats)
+		return AddStat * MultiplierManager:GetPlayerTears(player)
 	elseif StatType == "DAMAGE" then
-		return AddStat * MultiplierManager:GetPlayerDamage(player, IsBaseStats)
+		return AddStat * MultiplierManager:GetPlayerDamage(player)
 	elseif StatType == "SPEED" then
-		return AddStat * MultiplierManager:GetPlayerSpeed(player, IsBaseStats)
+		return AddStat * MultiplierManager:GetPlayerSpeed(player)
 	elseif StatType == "RANGE" then
-		return AddStat * MultiplierManager:GetPlayerRange(player, IsBaseStats)
+		return AddStat * MultiplierManager:GetPlayerRange(player)
 	elseif StatType == "SHOTSPEED" then
-		return AddStat * MultiplierManager:GetPlayerShotSpeed(player, IsBaseStats)
+		return AddStat * MultiplierManager:GetPlayerShotSpeed(player)
 	elseif StatType == "LUCK" then
-		return AddStat * MultiplierManager:GetPlayerLuck(player, IsBaseStats)
+		return AddStat * MultiplierManager:GetPlayerLuck(player)
 	end
 
 	ThrowError("Error MultiplierManager:ApplyMultiplier : Argument #3 is an unknown value")

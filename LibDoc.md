@@ -289,15 +289,37 @@ end
 Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 ```
 
-## GetPlayerDamage
+## CanGiveCrackedCrowMult
 
 ```lua
-function MultiplierManager:GetPlayerDamage(EntityPlayer : userdata, IsBaseStats : boolean)
+function MultiplierManager:CanGiveCrackedCrowMult(EntityPlayer : userdata, StatType : string)
 ```
 
 - `EntityPlayer` : userdata
 
-- `IsBaseStats` : Boolean - Just to know if is applying to the base stats - Default False
+- `StatType` : String - Stat type (damage, tears, range, etc)
+
+- `Return` : Boolean
+
+### Example
+
+```lua
+local Mod = RegisterMod("YourMod", 1)
+
+function Mod:DoChache(player, cacheflag)
+    -- print if can give Cracked Crown multiplier to the player damage
+    print(MultiplierManager:CanGiveCrackedCrowMult(player, "damage"))
+end
+Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
+```
+
+## GetPlayerDamage
+
+```lua
+function MultiplierManager:GetPlayerDamage(EntityPlayer : userdata)
+```
+
+- `EntityPlayer` : userdata
 
 - `Return` : Float
 
@@ -318,12 +340,10 @@ Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 ## GetPlayerTears
 
 ```lua
-function MultiplierManager:GetPlayerTears(EntityPlayer : userdata, IsBaseStats : boolean)
+function MultiplierManager:GetPlayerTears(EntityPlayer : userdata)
 ```
 
 - `EntityPlayer` : userdata
-
-- `IsBaseStats` : Boolean - Just to know if is applying to the base stats - Default False
 
 - `Return` : Float
 
@@ -344,12 +364,10 @@ Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 ## GetPlayerSpeed
 
 ```lua
-function MultiplierManager:GetPlayerSpeed(EntityPlayer : userdata, IsBaseStats : boolean)
+function MultiplierManager:GetPlayerSpeed(EntityPlayer : userdata)
 ```
 
 - `EntityPlayer` : userdata
-
-- `IsBaseStats` : Boolean - Just to know if is applying to the base stats - Default False
 
 - `Return` : Float
 
@@ -370,12 +388,10 @@ Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 ## GetPlayerRange
 
 ```lua
-function MultiplierManager:GetPlayerRange(EntityPlayer : userdata, IsBaseStats : boolean)
+function MultiplierManager:GetPlayerRange(EntityPlayer : userdata)
 ```
 
 - `EntityPlayer` : userdata
-
-- `IsBaseStats` : Boolean - Just to know if is applying to the base stats - Default False
 
 - `Return` : Float
 
@@ -396,12 +412,10 @@ Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 ## GetPlayerShotSpeed
 
 ```lua
-function MultiplierManager:GetPlayerShotSpeed(EntityPlayer : userdata, IsBaseStats : boolean)
+function MultiplierManager:GetPlayerShotSpeed(EntityPlayer : userdata)
 ```
 
 - `EntityPlayer` : userdata
-
-- `IsBaseStats` : Boolean - Just to know if is applying to the base stats - Default False
 
 - `Return` : Float
 
@@ -422,12 +436,10 @@ Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 ## GetPlayerLuck
 
 ```lua
-function MultiplierManager:GetPlayerLuck(EntityPlayer : userdata, IsBaseStats : boolean)
+function MultiplierManager:GetPlayerLuck(EntityPlayer : userdata)
 ```
 
 - `EntityPlayer` : userdata
-
-- `IsBaseStats` : Boolean - Just to know if is applying to the base stats - Default False
 
 - `Return` : Float
 
@@ -570,3 +582,5 @@ The next items / multipliers only apply if REPENTOGON is installed
 - `Dead Eye`
 
 - `D8`
+
+- `Epiphora`
