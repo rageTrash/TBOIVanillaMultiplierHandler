@@ -331,8 +331,6 @@ local Mod = RegisterMod("YourMod", 1)
 function Mod:DoChache(player, cacheflag)
     -- prints the player total damage multiplier
     print(MultiplierManager:GetPlayerDamage(player))
-    -- prints the player total damage multiplier without the Cracked Crown multiplier
-    print(MultiplierManager:GetPlayerDamage(player, true))
 end
 Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 ```
@@ -355,8 +353,6 @@ local Mod = RegisterMod("YourMod", 1)
 function Mod:DoCache(player, cacheflag)
     -- prints the player total tear multiplier
     print(MultiplierManager:GetPlayerTears(player))
-    -- prints the player total tear multiplier without the Cracked Crown multiplier
-    print(MultiplierManager:GetPlayerTears(player, true))
 end
 Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 ```
@@ -379,8 +375,6 @@ local Mod = RegisterMod("YourMod", 1)
 function Mod:DoCache(player, cacheflag)
     -- prints the player total speed multiplier
     print(MultiplierManager:GetPlayerSpeed(player))
-    -- prints the player total speed multiplier without the Cracked Crown multiplier
-    print(MultiplierManager:GetPlayerSpeed(player, true))
 end
 Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 ```
@@ -403,8 +397,6 @@ local Mod = RegisterMod("YourMod", 1)
 function Mod:DoCache(player, cacheflag)
     -- prints the player total range multiplier
     print(MultiplierManager:GetPlayerRange(player))
-    -- prints the player total range multiplier without the Cracked Crown multiplier
-    print(MultiplierManager:GetPlayerRange(player, true))
 end
 Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 ```
@@ -427,8 +419,6 @@ local Mod = RegisterMod("YourMod", 1)
 function Mod:DoCache(player, cacheflag)
     -- prints the player total shotspeed multiplier
     print(MultiplierManager:GetPlayerShotSpeed(player))
-    -- prints the player total shotspeed multiplier without the Cracked Crown multiplier
-    print(MultiplierManager:GetPlayerShotSpeed(player, true))
 end
 Mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, Mod.DoCache)
 ```
