@@ -1,9 +1,22 @@
-local VERSION = 2.5
+local VERSION = 2.6
 MultiplierManager = MultiplierManager or {}
 
 if MultiplierManager and MultiplierManager.Version and VERSION <= MultiplierManager.Version then return end
 
 MultiplierManager.Version = VERSION
+
+
+MultiplierManager.PlayerMult = {}
+MultiplierManager.ItemMult = {}
+MultiplierManager.TrinketMult = {}
+MultiplierManager.MiscMult = {
+	["DAMAGE"] = {},
+	["TEARS"] = {},
+	["SPEED"] = {},
+	["RANGE"] = {},
+	["SHOTSPEED"] = {},
+	["LUCK"] = {}
+}
 
 
 local LiquidPoopEffect = {
@@ -46,272 +59,58 @@ end
 
 local function ThrowError(str)
 	local str = tostring(str)
-	error(str, 2)
+	error(str, 3)
 end
 
-local function GetPlayerIndex(playerPtr)
-	if playerPtr:GetPlayerType() == PlayerType.PLAYER_THESOUL_B and playerPtr:GetMainTwin() ~= nil then
-		playerPtr = playerPtr:GetMainTwin()
+
+
+local function RepentogonReal() return (REPENTOGON and REPENTOGON["Real"]) end
+
+
+local function CheckItem(player, ID, isTrinket)
+	if isTrinket then
+		return (player:HasTrinket(ID) or player:GetEffects():HasTrinketEffect(ID))
 	end
-	return tostring(GetPtrHash(playerPtr))
+	return (player:HasCollectible(ID) or player:GetEffects():HasCollectibleEffect(ID))
 end
 
 
-
-MultiplierManager.PlayerMult = {
-	[PlayerType.PLAYER_CAIN] 			= {Damage = 1.2},
-	[PlayerType.PLAYER_JUDAS] 			= {Damage = 1.35},
-	[PlayerType.PLAYER_BLUEBABY] 		= {Damage = 1.05},
-	[PlayerType.PLAYER_EVE] 			= {Damage = function (_, player)
-									    	if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_WHORE_OF_BABYLON) then return 1 end
-									    	return 0.75
-									    end},
-	[PlayerType.PLAYER_AZAZEL] 			= {Damage = 1.5, Tears = 0.267},
-	[PlayerType.PLAYER_LAZARUS2] 		= {Damage = 1.4},
-	[PlayerType.PLAYER_BLACKJUDAS] 		= {Damage = 2},
-	[PlayerType.PLAYER_KEEPER]			= {Damage = 1.2},
-	[PlayerType.PLAYER_THEFORGOTTEN] 	= {Damage = 1.5, Tears = 0.5},
-
-	--Tainted Characters
-	[PlayerType.PLAYER_MAGDALENE_B] 	= {Damage = 0.75},
-	[PlayerType.PLAYER_CAIN_B]			= {Damage = 1.2},
-	[PlayerType.PLAYER_EVE_B]			= {Damage = 1.2, Tears = 0.66},
-	[PlayerType.PLAYER_AZAZEL_B] 		= {Damage = 1.5, Tears = 0.33},
-	[PlayerType.PLAYER_THELOST_B] 		= {Damage = 1.3},
-	[PlayerType.PLAYER_THEFORGOTTEN_B]	= {Damage = 1.5, Tears = 0.5},
-	[PlayerType.PLAYER_LAZARUS2_B] 		= {Damage = 1.5},
-}
-
-
-MultiplierManager.ItemMult = {
-	[CollectibleType.COLLECTIBLE_INNER_EYE]				= {Tears = function(_, player)
-															if player:HasCollectible(CollectibleType.COLLECTIBLE_20_20) then return 1 end
-															return 0.51
-														end},
-    [CollectibleType.COLLECTIBLE_CRICKETS_HEAD] 		= {Damage = 1.5},
-    [CollectibleType.COLLECTIBLE_MY_REFLECTION]			= {Range = 2, ShotSpeed = 1.6},
-    [CollectibleType.COLLECTIBLE_NUMBER_ONE]			= {Range = 0.8},
-    [CollectibleType.COLLECTIBLE_BLOOD_OF_THE_MARTYR]	= {Damage = function(_, player)
-															if not player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_BOOK_OF_BELIAL) then return 1 end
-															if player:HasCollectible(CollectibleType.COLLECTIBLE_CRICKETS_HEAD) or
-																player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_MAGIC_MUSHROOM) then 
-																return 1
-															end
-															return 1.5
-													    end},
-    [CollectibleType.COLLECTIBLE_MAGIC_MUSHROOM] 		= {Damage = function(_, player)
-													    	if player:HasCollectible(CollectibleType.COLLECTIBLE_CRICKETS_HEAD) then return 1 end
-													    	return 1.5
-													    end},
-	[CollectibleType.COLLECTIBLE_DR_FETUS]				= {Tears = function(_, player)
-															if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_HAEMOLACRIA) or
-																player:HasCollectible(CollectibleType.COLLECTIBLE_MOMS_KNIFE) or
-																player:HasCollectible(CollectibleType.COLLECTIBLE_MONSTROS_LUNG)
-																then
-																return 1
-															end
-															return 0.4
-														end},
-	[CollectibleType.COLLECTIBLE_BRIMSTONE]				= {Damage = function(_, player)
-															if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_HAEMOLACRIA) or
-																player:HasCollectible(CollectibleType.COLLECTIBLE_MOMS_KNIFE) then
-																return 1 
-															elseif player:GetEffects():GetCollectibleEffectNum(CollectibleType.COLLECTIBLE_BRIMSTONE) >= 2 then
-																return 1.2
-															elseif player:HasCollectible(CollectibleType.COLLECTIBLE_TECHNOLOGY) then
-																return 1.5
-															end
-
-															return 1
-														end,
-														Tears = function(_, player)
-															if player:HasCollectible(CollectibleType.COLLECTIBLE_MOMS_KNIFE) then return 1 end
-															return 0.33
-														end},
-    [CollectibleType.COLLECTIBLE_ODD_MUSHROOM_THIN] 	= {Damage = 0.9},
-    [CollectibleType.COLLECTIBLE_IPECAC]				= {Tears = 0.33,
-    													Range = function(_, player)
-    														if player:HasCollectible(CollectibleType.COLLECTIBLE_NUMBER_ONE) then return 1 end
-    														return 0.8
-    													end,
-    													ShotSpeed = 0.2},
-	[CollectibleType.COLLECTIBLE_TECHNOLOGY_2]			= {Tears = 0.66},
-	[CollectibleType.COLLECTIBLE_MUTANT_SPIDER]			= {Tears = function(_, player)
-															if player:HasCollectible(CollectibleType.COLLECTIBLE_20_20) then return 1 end
-															return 0.42
-														end},
-    [CollectibleType.COLLECTIBLE_POLYPHEMUS] 			= {Damage = 2,
-    													Tears = function(_, player)
-    														if player:HasCollectible(CollectibleType.COLLECTIBLE_INNER_EYE) or
-    															player:HasCollectible(CollectibleType.COLLECTIBLE_MUTANT_SPIDER) or
-    															player:HasCollectible(CollectibleType.COLLECTIBLE_20_20) or
-    															player:HasCollectible(CollectibleType.COLLECTIBLE_C_SECTION) then
-    															return 1
-    														end
-    														return 0.42
-    													end},
-    [CollectibleType.COLLECTIBLE_SACRED_HEART] 			= {Damage = 2.3},
-    [CollectibleType.COLLECTIBLE_CRICKETS_BODY]			= {Range = function(_, player)
-    														if player:HasCollectible(CollectibleType.COLLECTIBLE_IPECAC) then
-    															return 1
-    														end
-    														return 0.8
-    													end},
-    [CollectibleType.COLLECTIBLE_MONSTROS_LUNG]			= {Tears = function(_, player)
-    														if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_BRIMSTONE) or
-    															player:HasCollectible(CollectibleType.COLLECTIBLE_EPIC_FETUS) or
-    															player:HasCollectible(CollectibleType.COLLECTIBLE_MOMS_KNIFE) or
-    															player:HasCollectible(CollectibleType.COLLECTIBLE_LUDOVICO_TECHNIQUE) or
-    															player:HasCollectible(CollectibleType.COLLECTIBLE_TECHNOLOGY) or
-    															player:HasCollectible(CollectibleType.COLLECTIBLE_SPIRIT_SWORD) or
-    															player:HasCollectible(CollectibleType.COLLECTIBLE_C_SECTION) then
-    															return 1
-    														elseif player:HasCollectible(CollectibleType.COLLECTIBLE_TECH_X) then
-    															return 0.32 --close enough
-    														end
-    	        											return 0.23
-        												end},
-    [CollectibleType.COLLECTIBLE_20_20] 				= {Damage = 0.8},
-    [CollectibleType.COLLECTIBLE_EVES_MASCARA] 			= {Damage = 2, Tears = 0.66},
-    [CollectibleType.COLLECTIBLE_SOY_MILK] 				= {Damage = function(_, player)
-															if player:HasCollectible(CollectibleType.COLLECTIBLE_ALMOND_MILK) then return 1 end
-															return 0.2
-													    end,
-														Tears = function(_, player)
-															if player:HasCollectible(CollectibleType.COLLECTIBLE_ALMOND_MILK) then return 1 end
-															return 5.5
-														end},
-	[CollectibleType.COLLECTIBLE_DEAD_EYE] 				= {Damage = function(_, player)
-															if not (REPENTOGON and REPENTOGON["Real"]) or
-																player:HasCollectible(CollectibleType.COLLECTIBLE_TECH_X) then
-																return 1
-															end
-															return 1 + (player:GetDeadEyeCharge() * 0.25)
-														end},
-    [CollectibleType.COLLECTIBLE_CROWN_OF_LIGHT] 		= {Damage = function(_, player)
-															if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_CROWN_OF_LIGHT) then return 2 end
-															return 1
-													    end},
-	[CollectibleType.COLLECTIBLE_HAEMOLACRIA] 			= {Damage = 1.5,
-														Tears = function(_, player)
-															if player:HasCollectible(CollectibleType.COLLECTIBLE_MONSTROS_LUNG) or
-    															player:HasCollectible(CollectibleType.COLLECTIBLE_EPIC_FETUS) or
-    															player:HasCollectible(CollectibleType.COLLECTIBLE_MOMS_KNIFE) or
-    															player:HasCollectible(CollectibleType.COLLECTIBLE_LUDOVICO_TECHNIQUE) or
-    															player:HasCollectible(CollectibleType.COLLECTIBLE_SPIRIT_SWORD) or
-    															player:HasCollectible(CollectibleType.COLLECTIBLE_C_SECTION) then
-																return 1
-															elseif player:HasCollectible(CollectibleType.COLLECTIBLE_IPECAC) then return 0.76 end -- is closer
-    														return 0.5
-    													end,
-														Range = function(_, player)
-    														if player:HasCollectible(CollectibleType.COLLECTIBLE_IPECAC) or
-    															player:HasCollectible(CollectibleType.COLLECTIBLE_CRICKETS_BODY) then
-    															return 1
-    														end
-    														return 0.8
-    													end},
-    [CollectibleType.COLLECTIBLE_ALMOND_MILK] 			= {Damage = 0.33, Tears = 4},
-    [CollectibleType.COLLECTIBLE_IMMACULATE_HEART] 		= {Damage = 1.2},
-    [CollectibleType.COLLECTIBLE_MEGA_MUSH] 			= {Damage = function(_, player)
-													    	if not player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_MEGA_MUSH) then return 1 end
-													    	return 4
-													    end},
-	[CollectibleType.COLLECTIBLE_BERSERK]				= {Tears = function(_, player)
-															if not player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_BERSERK) then return 1 end
-															if player:GetPlayerType() == PlayerType.PLAYER_THEFORGOTTEN or
-																player:GetPlayerType() == PlayerType.PLAYER_THEFORGOTTEN_B then
-																return 1
-															end
-															return 0.5
-														end}
-}
-
-
-MultiplierManager.TrinketMult = {}
-
-
-local function checkHolyAura(_, player)
-		for _, ent in pairs(Isaac.FindByType(EntityType.ENTITY_EFFECT, EffectVariant.CREEP_LIQUID_POOP)) do
-	        local effect = ent:ToEffect()
-	        if effect.State == 64 and player.Position:DistanceSquared(ent.Position) <= 380 then
-	            return true
-	        end
-	    end
-		for _, ent in pairs(Isaac.FindByType(1000, EffectVariant.HALLOWED_GROUND, -1, false, false)) do
-			if ent.Parent then
-				local parent = ent.Parent
-				if (parent.Type == EntityType.ENTITY_POOP and parent.Variant == 16) or (parent.Type == EntityType.ENTITY_FAMILIAR and parent.Variant == FamiliarVariant.STAR_OF_BETHLEHEM) then
-					if ent.Position:DistanceSquared(player.Position) <= 6400 then
-						return true
-					end
-				elseif (parent.Type == EntityType.ENTITY_FAMILIAR and parent.Variant == FamiliarVariant.DIP and parent.SubType == 6) then
-					if ent.Position:DistanceSquared(player.Position) <= 1000 then
-						return true
-					end
-				end
+local function Multiplier(player, ItemTable, statType, isTrinket)
+	local totalMult = 1
+	for ID, itemMult in pairs(ItemTable) do
+		local addMult = itemMult[statType]
+		if CheckItem(player, ID, isTrinket) and addMult then
+			if type(addMult) == "function" then
+				totalMult = totalMult * addMult(_, player)
+			else
+				totalMult = totalMult * addMult
 			end
 		end
-		return false
 	end
+	return totalMult
+end
 
-MultiplierManager.MiscMult = {
-	["DAMAGE"] = {
-		["D8 Mult"] = {
-			Condition = function() return (REPENTOGON and REPENTOGON["Real"]) end,
-			Mult = function(_, player) return player:GetD8DamageModifier() end
-		},
-		["Holy Aura"] = {
-			Condition = checkHolyAura,
-			Mult = function(_, player)
-				for _, ent in pairs(Isaac.FindByType(3, FamiliarVariant.STAR_OF_BETHLEHEM, -1, false, false)) do
-					if ent.Position:DistanceSquared(player.Position) <= 6400 then
-						return 1.8
-					end
-				end
-				return 1.2
+local function MiscMultiplier(player, statType)
+	local totalMult = 1
+	for name, ConData in pairs(MultiplierManager.MiscMult[CheckString(statType)]) do
+		local condition = ConData.Condition
+		local addMult = ConData.Mult
+		if type(condition) == "function" then
+			condition = condition(_, player)
+		end
+		if condition then
+			if type(addMult) == "function" then
+				totalMult = totalMult * addMult(_, player)
+			else
+				totalMult = totalMult * addMult
 			end
-		}
-	},
-	["TEARS"] = {
-		["D8 Mult"] = {
-			Condition = function() return (REPENTOGON and REPENTOGON["Real"]) end,
-			Mult = function(_, player) return player:GetD8FireDelayModifier() end
-		},
-		["Epiphora Mult"] = {
-			Condition = function() return (REPENTOGON and REPENTOGON["Real"]) end,
-			Mult = function(_, player)
-				local charge = player:GetEpiphoraCharge()
-			    if charge >= 270 then
-			        return 2
-			    elseif charge >= 180 then
-			        return 1.66
-			    elseif charge >= 90 then
-			        return 1.33
-			    end
-			    return 1
-			end
-		},
-		["Holy Aura"] = {
-			Condition = checkHolyAura,
-			Mult = 2.5
-		}
-	},
-	["SPEED"] = {
-		["D8 Mult"] = {
-			Condition = function() return (REPENTOGON and REPENTOGON["Real"]) end,
-			Mult = function(_, player) return player:GetD8SpeedModifier() end
-		},
-	},
-	["RANGE"] = {
-		["D8 Mult"] = {
-			Condition = function() return (REPENTOGON and REPENTOGON["Real"]) end,
-			Mult = function(_, player) return player:GetD8RangeModifier() end
-		},
-	},
-	["SHOTSPEED"] = {},
-	["LUCK"] = {}
-}
+		end
+	end
+	return totalMult
+end
+
+
+
 
 --[[
 mult = {
@@ -478,42 +277,9 @@ function MultiplierManager:GetPlayerDamage(player)
 
 	if type(totalMult) == "function" then totalMult = totalMult(_, player) end
 
-	for itemID, itemMult in pairs(MultiplierManager.ItemMult) do
-		local addDamage = itemMult.Damage
-		if (player:HasCollectible(itemID) or player:GetEffects():HasCollectibleEffect(itemID)) and addDamage then
-			if type(addDamage) == "function" then
-				totalMult = totalMult * addDamage(_, player)
-			else
-				totalMult = totalMult * addDamage
-			end
-		end
-	end
-
-	for trinketID, trinketMult in pairs(MultiplierManager.TrinketMult) do
-		local addDamage = trinketMult.Damage
-		if (player:HasTrinket(trinketID) or player:GetEffects():HasTrinketEffect(trinketID)) and addDamage then
-			if type(addDamage) == "function" then
-				totalMult = totalMult * addDamage(_, player)
-			else
-				totalMult = totalMult * addDamage
-			end
-		end
-	end
-
-	for name, ConData in pairs(MultiplierManager.MiscMult.DAMAGE) do
-		local condition = ConData.Condition
-		local addDamage = ConData.Mult
-		if type(condition) == "function" then
-			condition = condition(_, player)
-		end
-		if condition then
-			if type(addDamage) == "function" then
-				totalMult = totalMult * addDamage(_, player)
-			else
-				totalMult = totalMult * addDamage
-			end
-		end
-	end
+	totalMult = totalMult * Multiplier(player, MultiplierManager.ItemMult, "Damage")
+	totalMult = totalMult * Multiplier(player, MultiplierManager.TrinketMult, "Damage", true)
+	totalMult = totalMult * MiscMultiplier(player, "Damage")
 
 	if (player:HasTrinket(TrinketType.TRINKET_CRACKED_CROWN) or player:GetEffects():HasTrinketEffect(TrinketType.TRINKET_CRACKED_CROWN)) then
 		if player.Damage > totalMult * StatsGenericMin.DAMAGE then
@@ -540,42 +306,9 @@ function MultiplierManager:GetPlayerTears(player)
 
 	if type(totalMult) == "function" then totalMult = totalMult(_, player) end
 
-	for itemID, itemMult in pairs(MultiplierManager.ItemMult) do
-		local addTears = itemMult.Tears
-		if (player:HasCollectible(itemID) or player:GetEffects():HasCollectibleEffect(itemID)) and addTears then
-			if type(addTears) == "function" then
-				totalMult = totalMult * addTears(_, player)
-			else
-				totalMult = totalMult * addTears
-			end
-		end
-	end
-
-	for trinketID, trinketMult in pairs(MultiplierManager.TrinketMult) do
-		local addTears = trinketMult.Tears
-		if (player:HasTrinket(trinketID) or player:GetEffects():HasTrinketEffect(trinketID)) and addTears then
-			if type(addTears) == "function" then
-				totalMult = totalMult * addTears(_, player)
-			else
-				totalMult = totalMult * addTears
-			end
-		end
-	end
-
-	for name, ConData in pairs(MultiplierManager.MiscMult.TEARS) do
-		local condition = ConData.Condition
-		local addTears = ConData.Mult
-		if type(condition) == "function" then
-			condition = condition(_, player)
-		end
-		if condition then
-			if type(addTears) == "function" then
-				totalMult = totalMult * addTears(_, player)
-			else
-				totalMult = totalMult * addTears
-			end
-		end
-	end
+	totalMult = totalMult * Multiplier(player, MultiplierManager.ItemMult, "Tears")
+	totalMult = totalMult * Multiplier(player, MultiplierManager.TrinketMult, "Tears", true)
+	totalMult = totalMult * MiscMultiplier(player, "Tears")
 
 	if (player:HasTrinket(TrinketType.TRINKET_CRACKED_CROWN) or player:GetEffects():HasTrinketEffect(TrinketType.TRINKET_CRACKED_CROWN)) then
 		if player.MaxFireDelay > totalMult * StatsGenericMin.TEARS then
@@ -602,42 +335,9 @@ function MultiplierManager:GetPlayerSpeed(player)
 
 	if type(totalMult) == "function" then totalMult = totalMult(_, player) end
 
-	for itemID, itemMult in pairs(MultiplierManager.ItemMult) do
-		local addSpeed = itemMult.Speed
-		if (player:HasCollectible(itemID) or player:GetEffects():HasCollectibleEffect(itemID)) and addSpeed then
-			if type(addSpeed) == "function" then
-				totalMult = totalMult * addSpeed(_, player)
-			else
-				totalMult = totalMult * addSpeed
-			end
-		end
-	end
-
-	for trinketID, trinketMult in pairs(MultiplierManager.TrinketMult) do
-		local addSpeed = trinketMult.Speed
-		if (player:HasTrinket(trinketID) or player:GetEffects():HasTrinketEffect(trinketID)) and addSpeed then
-			if type(addSpeed) == "function" then
-				totalMult = totalMult * addSpeed(_, player)
-			else
-				totalMult = totalMult * addSpeed
-			end
-		end
-	end
-
-	for name, ConData in pairs(MultiplierManager.MiscMult.SPEED) do
-		local condition = ConData.Condition
-		local addSpeed = ConData.Mult
-		if type(condition) == "function" then
-			condition = condition(_, player)
-		end
-		if condition then
-			if type(addSpeed) == "function" then
-				totalMult = totalMult * addSpeed(_, player)
-			else
-				totalMult = totalMult * addSpeed
-			end
-		end
-	end
+	totalMult = totalMult * Multiplier(player, MultiplierManager.ItemMult, "Speed")
+	totalMult = totalMult * Multiplier(player, MultiplierManager.TrinketMult, "Speed", true)
+	totalMult = totalMult * MiscMultiplier(player, "Speed")
 
 	if (player:HasTrinket(TrinketType.TRINKET_CRACKED_CROWN) or player:GetEffects():HasTrinketEffect(TrinketType.TRINKET_CRACKED_CROWN)) then
 		if player.MoveSpeed > totalMult * StatsGenericMin.SPEED then
@@ -664,42 +364,9 @@ function MultiplierManager:GetPlayerRange(player)
 
 	if type(totalMult) == "function" then totalMult = totalMult(_, player) end
 
-	for itemID, itemMult in pairs(MultiplierManager.ItemMult) do
-		local addRange = itemMult.Range
-		if (player:HasCollectible(itemID) or player:GetEffects():HasCollectibleEffect(itemID)) and addRange then
-			if type(addRange) == "function" then
-				totalMult = totalMult * addRange(_, player)
-			else
-				totalMult = totalMult * addRange
-			end
-		end
-	end
-
-	for trinketID, trinketMult in pairs(MultiplierManager.TrinketMult) do
-		local addRange = trinketMult.Range
-		if (player:HasTrinket(trinketID) or player:GetEffects():HasTrinketEffect(trinketID)) and addRange then
-			if type(addRange) == "function" then
-				totalMult = totalMult * addRange(_, player)
-			else
-				totalMult = totalMult * addRange
-			end
-		end
-	end
-
-	for name, ConData in pairs(MultiplierManager.MiscMult.RANGE) do
-		local condition = ConData.Condition
-		local addRange = ConData.Mult
-		if type(condition) == "function" then
-			condition = condition(_, player)
-		end
-		if condition then
-			if type(addRange) == "function" then
-				totalMult = totalMult * addRange(_, player)
-			else
-				totalMult = totalMult * addRange
-			end
-		end
-	end
+	totalMult = totalMult * Multiplier(player, MultiplierManager.ItemMult, "Range")
+	totalMult = totalMult * Multiplier(player, MultiplierManager.TrinketMult, "Range", true)
+	totalMult = totalMult * MiscMultiplier(player, "Range")
 
 	if (player:HasTrinket(TrinketType.TRINKET_CRACKED_CROWN) or player:GetEffects():HasTrinketEffect(TrinketType.TRINKET_CRACKED_CROWN)) then
 		if player.TearRange > totalMult * StatsGenericMin.RANGE then
@@ -726,42 +393,9 @@ function MultiplierManager:GetPlayerShotSpeed(player)
 
 	if type(totalMult) == "function" then totalMult = totalMult(_, player) end
 
-	for itemID, itemMult in pairs(MultiplierManager.ItemMult) do
-		local addShotSpeed = itemMult.ShotSpeed
-		if (player:HasCollectible(itemID) or player:GetEffects():HasCollectibleEffect(itemID)) and addShotSpeed then
-			if type(addShotSpeed) == "function" then
-				totalMult = totalMult * addShotSpeed(_, player)
-			else
-				totalMult = totalMult * addShotSpeed
-			end
-		end
-	end
-
-	for trinketID, trinketMult in pairs(MultiplierManager.TrinketMult) do
-		local addShotSpeed = trinketMult.ShotSpeed
-		if (player:HasTrinket(trinketID) or player:GetEffects():HasTrinketEffect(trinketID)) and addShotSpeed then
-			if type(addShotSpeed) == "function" then
-				totalMult = totalMult * addShotSpeed(_, player)
-			else
-				totalMult = totalMult * addShotSpeed
-			end
-		end
-	end
-
-	for name, ConData in pairs(MultiplierManager.MiscMult.SHOTSPEED) do
-		local condition = ConData.Condition
-		local addShotSpeed = ConData.Mult
-		if type(condition) == "function" then
-			condition = condition(_, player)
-		end
-		if condition then
-			if type(addShotSpeed) == "function" then
-				totalMult = totalMult * addShotSpeed(_, player)
-			else
-				totalMult = totalMult * addShotSpeed
-			end
-		end
-	end
+	totalMult = totalMult * Multiplier(player, MultiplierManager.ItemMult, "ShotSpeed")
+	totalMult = totalMult * Multiplier(player, MultiplierManager.TrinketMult, "ShotSpeed", true)
+	totalMult = totalMult * MiscMultiplier(player, "ShotSpeed")
 
 	if (player:HasTrinket(TrinketType.TRINKET_CRACKED_CROWN) or player:GetEffects():HasTrinketEffect(TrinketType.TRINKET_CRACKED_CROWN)) then
 		if player.ShotSpeed > totalMult * StatsGenericMin.SHOTSPEED then
@@ -788,42 +422,9 @@ function MultiplierManager:GetPlayerLuck(player)
 
 	if type(totalMult) == "function" then totalMult = totalMult(_, player) end
 
-	for itemID, itemMult in pairs(MultiplierManager.ItemMult) do
-		local addLuck = itemMult.Luck
-		if (player:HasCollectible(itemID) or player:GetEffects():HasCollectibleEffect(itemID)) and addLuck then
-			if type(addLuck) == "function" then
-				totalMult = totalMult * addLuck(_, player)
-			else
-				totalMult = totalMult * addLuck
-			end
-		end
-	end
-
-	for trinketID, trinketMult in pairs(MultiplierManager.TrinketMult) do
-		local addLuck = trinketMult.Luck
-		if (player:HasTrinket(trinketID) or player:GetEffects():HasTrinketEffect(trinketID)) and addLuck then
-			if type(addLuck) == "function" then
-				totalMult = totalMult * addLuck(_, player)
-			else
-				totalMult = totalMult * addLuck
-			end
-		end
-	end
-
-	for name, ConData in pairs(MultiplierManager.MiscMult.LUCK) do
-		local condition = ConData.Condition
-		local addLuck = ConData.Mult
-		if type(condition) == "function" then
-			condition = condition(_, player)
-		end
-		if condition then
-			if type(addLuck) == "function" then
-				totalMult = totalMult * addLuck(_, player)
-			else
-				totalMult = totalMult * addLuck
-			end
-		end
-	end
+	totalMult = totalMult * Multiplier(player, MultiplierManager.ItemMult, "Luck")
+	totalMult = totalMult * Multiplier(player, MultiplierManager.TrinketMult, "Luck", true)
+	totalMult = totalMult * MiscMultiplier(player, "Luck")
 
 	player:GetData().MultiplierManager_CacheEvaluation = pCache or {}
 	player:GetData().MultiplierManager_CacheEvaluation.Luck = {Mult = totalMult, FrameCached = Game():GetFrameCount()}
@@ -863,3 +464,261 @@ function MultiplierManager:ApplyMultiplier(AddStat, player, StatType)
 	return 0
 end
 function MultiplierManager:ApplyMultipliers(AddStat, player, StatType) return MultiplierManager:ApplyMultiplier(AddStat, player, StatType) end -- old name to not cause errors
+
+
+
+
+
+-- Characters
+MultiplierManager:RegisterPlayer(PlayerType.PLAYER_CAIN, {Damage = 1.2})
+MultiplierManager:RegisterPlayer(PlayerType.PLAYER_JUDAS, {Damage = 1.35})
+MultiplierManager:RegisterPlayer(PlayerType.PLAYER_BLUEBABY, {Damage = 1.05})
+MultiplierManager:RegisterPlayer(PlayerType.PLAYER_EVE, 
+	{Damage = function (_, player)
+		if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_WHORE_OF_BABYLON) then return 1 end
+		return 0.75
+	end})
+MultiplierManager:RegisterPlayer(PlayerType.PLAYER_AZAZEL, {Damage = 1.5, Tears = 0.267})
+MultiplierManager:RegisterPlayer(PlayerType.PLAYER_LAZARUS2, {Damage = 1.4})
+MultiplierManager:RegisterPlayer(PlayerType.PLAYER_BLACKJUDAS, {Damage = 2})
+MultiplierManager:RegisterPlayer(PlayerType.PLAYER_KEEPER, {Damage = 1.2})
+MultiplierManager:RegisterPlayer(PlayerType.PLAYER_THEFORGOTTEN, {Damage = 1.5, Tears = 0.5})
+
+-- Tainted Characters
+MultiplierManager:RegisterPlayer(PlayerType.PLAYER_MAGDALENE_B, {Damage = 0.75})
+MultiplierManager:RegisterPlayer(PlayerType.PLAYER_CAIN_B, {Damage = 1.2})
+MultiplierManager:RegisterPlayer(PlayerType.PLAYER_EVE_B, {Damage = 1.2, Tears = 0.66})
+MultiplierManager:RegisterPlayer(PlayerType.PLAYER_AZAZEL_B, {Damage = 1.5, Tears = 0.33})
+MultiplierManager:RegisterPlayer(PlayerType.PLAYER_THELOST_B, {Damage = 1.3})
+MultiplierManager:RegisterPlayer(PlayerType.PLAYER_THEFORGOTTEN_B, {Damage = 1.5, Tears = 0.5})
+MultiplierManager:RegisterPlayer(PlayerType.PLAYER_LAZARUS2_B, {Damage = 1.5})
+
+
+
+-- Collectibles
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_INNER_EYE,
+	{Tears = function(_, player)
+		if player:HasCollectible(CollectibleType.COLLECTIBLE_20_20) then return 1 end
+		return 0.51
+	end})
+
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_BLOOD_OF_THE_MARTYR, 
+	{Damage = function(_, player)
+		if not player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_BOOK_OF_BELIAL) then return 1 end
+		if player:HasCollectible(CollectibleType.COLLECTIBLE_CRICKETS_HEAD) or
+			player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_MAGIC_MUSHROOM) then 
+			return 1
+		end
+		return 1.5
+    end})
+
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_MAGIC_MUSHROOM, 
+	{Damage = function(_, player)
+    	if player:HasCollectible(CollectibleType.COLLECTIBLE_CRICKETS_HEAD) then return 1 end
+    	return 1.5
+    end})
+
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_DR_FETUS, 
+	{Tears = function(_, player)
+		if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_HAEMOLACRIA) or
+			player:HasCollectible(CollectibleType.COLLECTIBLE_MOMS_KNIFE) or
+			player:HasCollectible(CollectibleType.COLLECTIBLE_MONSTROS_LUNG)
+			then
+			return 1
+		end
+		return 0.4
+	end})
+
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_BRIMSTONE, 
+	{Damage = function(_, player)
+		if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_HAEMOLACRIA) or
+			player:HasCollectible(CollectibleType.COLLECTIBLE_MOMS_KNIFE) then
+			return 1 
+		elseif player:GetEffects():GetCollectibleEffectNum(CollectibleType.COLLECTIBLE_BRIMSTONE) >= 2 then
+			return 1.2
+		elseif player:HasCollectible(CollectibleType.COLLECTIBLE_TECHNOLOGY) then
+			return 1.5
+		end
+
+		return 1
+	end,
+	Tears = function(_, player)
+		if player:HasCollectible(CollectibleType.COLLECTIBLE_MOMS_KNIFE) then return 1 end
+		return 0.33
+	end})
+
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_IPECAC, 
+	{Tears = 0.33,
+	Range = function(_, player)
+		if player:HasCollectible(CollectibleType.COLLECTIBLE_NUMBER_ONE) then return 1 end
+		return 0.8
+	end,
+	ShotSpeed = 0.2})
+
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_MUTANT_SPIDER, {Tears = function(_, player)
+		if player:HasCollectible(CollectibleType.COLLECTIBLE_20_20) then return 1 end
+		return 0.42
+	end})
+
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_POLYPHEMUS, {Damage = 2,
+	Tears = function(_, player)
+		if player:HasCollectible(CollectibleType.COLLECTIBLE_INNER_EYE) or
+			player:HasCollectible(CollectibleType.COLLECTIBLE_MUTANT_SPIDER) or
+			player:HasCollectible(CollectibleType.COLLECTIBLE_20_20) or
+			player:HasCollectible(CollectibleType.COLLECTIBLE_C_SECTION) then
+			return 1
+		end
+		return 0.42
+	end})
+
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_CRICKETS_BODY, {Range = function(_, player)
+		if player:HasCollectible(CollectibleType.COLLECTIBLE_IPECAC) then
+			return 1
+		end
+		return 0.8
+	end})
+
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_MONSTROS_LUNG, {Tears = function(_, player)
+		if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_BRIMSTONE) or
+			player:HasCollectible(CollectibleType.COLLECTIBLE_EPIC_FETUS) or
+			player:HasCollectible(CollectibleType.COLLECTIBLE_MOMS_KNIFE) or
+			player:HasCollectible(CollectibleType.COLLECTIBLE_LUDOVICO_TECHNIQUE) or
+			player:HasCollectible(CollectibleType.COLLECTIBLE_TECHNOLOGY) or
+			player:HasCollectible(CollectibleType.COLLECTIBLE_SPIRIT_SWORD) or
+			player:HasCollectible(CollectibleType.COLLECTIBLE_C_SECTION) then
+			return 1
+		elseif player:HasCollectible(CollectibleType.COLLECTIBLE_TECH_X) then
+			return 0.32 --close enough
+		end
+		return 0.23
+	end})
+
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_SOY_MILK, 
+	{Damage = function(_, player)
+		if player:HasCollectible(CollectibleType.COLLECTIBLE_ALMOND_MILK) then return 1 end
+		return 0.2
+    end,
+	Tears = function(_, player)
+		if player:HasCollectible(CollectibleType.COLLECTIBLE_ALMOND_MILK) then return 1 end
+		return 5.5
+	end})
+
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_DEAD_EYE, 
+	{Damage = function(_, player)
+		if not RepentogonReal() or
+			player:HasCollectible(CollectibleType.COLLECTIBLE_TECH_X) then
+			return 1
+		end
+		return 1 + (player:GetDeadEyeCharge() * 0.25)
+	end})
+
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_CROWN_OF_LIGHT, 
+	{Damage = function(_, player)
+		if player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_CROWN_OF_LIGHT) then return 2 end
+		return 1
+    end})
+
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_HAEMOLACRIA, 
+	{Damage = 1.5,
+	Tears = function(_, player)
+		if player:HasCollectible(CollectibleType.COLLECTIBLE_MONSTROS_LUNG) or
+			player:HasCollectible(CollectibleType.COLLECTIBLE_EPIC_FETUS) or
+			player:HasCollectible(CollectibleType.COLLECTIBLE_MOMS_KNIFE) or
+			player:HasCollectible(CollectibleType.COLLECTIBLE_LUDOVICO_TECHNIQUE) or
+			player:HasCollectible(CollectibleType.COLLECTIBLE_SPIRIT_SWORD) or
+			player:HasCollectible(CollectibleType.COLLECTIBLE_C_SECTION) then
+			return 1
+		elseif player:HasCollectible(CollectibleType.COLLECTIBLE_IPECAC) then return 0.76 end -- is closer
+		return 0.5
+	end,
+	Range = function(_, player)
+		if player:HasCollectible(CollectibleType.COLLECTIBLE_IPECAC) or
+			player:HasCollectible(CollectibleType.COLLECTIBLE_CRICKETS_BODY) then
+			return 1
+		end
+		return 0.8
+	end})
+
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_MEGA_MUSH, 
+	{Damage = function(_, player)
+    	if not player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_MEGA_MUSH) then return 1 end
+    	return 4
+    end})
+
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_BERSERK, 
+	{Tears = function(_, player)
+		if not player:GetEffects():HasCollectibleEffect(CollectibleType.COLLECTIBLE_BERSERK) then return 1 end
+		if player:GetPlayerType() == PlayerType.PLAYER_THEFORGOTTEN or
+			player:GetPlayerType() == PlayerType.PLAYER_THEFORGOTTEN_B then
+			return 1
+		end
+		return 0.5
+	end})
+
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_CRICKETS_HEAD, {Damage = 1.5})
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_MY_REFLECTION, {Range = 2, ShotSpeed = 1.6})
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_NUMBER_ONE, {Range = 0.8})
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_ODD_MUSHROOM_THIN, {Damage = 0.9})
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_TECHNOLOGY_2, {Tears = 0.66})
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_SACRED_HEART, {Damage = 2.3})
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_20_20, {Damage = 0.8})
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_EVES_MASCARA, {Damage = 2, Tears = 0.66})
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_ALMOND_MILK, {Damage = 0.33, Tears = 4})
+MultiplierManager:RegisterItem(CollectibleType.COLLECTIBLE_IMMACULATE_HEART, {Damage = 1.2})
+
+
+
+
+-- Multipliers that are permanet or are apply on other conditions
+local function checkHolyAura(_, player)
+		for _, ent in pairs(Isaac.FindByType(EntityType.ENTITY_EFFECT, EffectVariant.CREEP_LIQUID_POOP)) do
+	        local effect = ent:ToEffect()
+	        if effect.State == LiquidPoopEffect.HOLY and player.Position:DistanceSquared(ent.Position) <= 380 then
+	            return true
+	        end
+	    end
+		for _, ent in pairs(Isaac.FindByType(1000, EffectVariant.HALLOWED_GROUND, -1, false, false)) do
+			if ent.Parent then
+				local parent = ent.Parent
+				if (parent.Type == EntityType.ENTITY_POOP and parent.Variant == 16) or (parent.Type == EntityType.ENTITY_FAMILIAR and parent.Variant == FamiliarVariant.STAR_OF_BETHLEHEM) then
+					if ent.Position:DistanceSquared(player.Position) <= 6400 then
+						return true
+					end
+				elseif (parent.Type == EntityType.ENTITY_FAMILIAR and parent.Variant == FamiliarVariant.DIP and parent.SubType == 6) then
+					if ent.Position:DistanceSquared(player.Position) <= 1000 then
+						return true
+					end
+				end
+			end
+		end
+		return false
+	end
+MultiplierManager:AddMiscMultiplier("Damage", "Holy Aura", checkHolyAura, 
+	function(_, player)
+		for _, ent in pairs(Isaac.FindByType(3, FamiliarVariant.STAR_OF_BETHLEHEM, -1, false, false)) do
+			if ent.Position:DistanceSquared(player.Position) <= 6400 then
+				return 1.8
+			end
+		end
+		return 1.2
+	end)
+MultiplierManager:AddMiscMultiplier("Tears", "Holy Aura", checkHolyAura, 2.5)
+
+
+MultiplierManager:AddMiscMultiplier("Damage", "D8 Mult", RepentogonReal, function(_, player) return player:GetD8DamageModifier() end)
+MultiplierManager:AddMiscMultiplier("Tears", "D8 Mult", RepentogonReal, function(_, player) return player:GetD8FireDelayModifier() end)
+MultiplierManager:AddMiscMultiplier("Speed", "D8 Mult", RepentogonReal, function(_, player) return player:GetD8SpeedModifier() end)
+MultiplierManager:AddMiscMultiplier("Range", "D8 Mult", RepentogonReal, function(_, player) return player:GetD8RangeModifier() end)
+
+MultiplierManager:AddMiscMultiplier("Tears", "Epiphora Mult", RepentogonReal, 
+	function(_, player)
+		local charge = player:GetEpiphoraCharge()
+	    if charge >= 270 then
+	        return 2
+	    elseif charge >= 180 then
+	        return 1.66
+	    elseif charge >= 90 then
+	        return 1.33
+	    end
+	    return 1
+	end)
